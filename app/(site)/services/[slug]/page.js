@@ -1,11 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getServices, getServiceBySlug, getTeam } from '@/lib/data';
+import { getServices, getServiceBySlug } from '@/lib/data';
 import { buildMetadata } from '@/lib/metadata';
 import MediaImage from '@/components/MediaImage';
 import ServiceVisual from '@/components/sections/ServiceVisual';
 import LeadForm from '@/components/forms/LeadForm';
-import TeamCard from '@/components/cards/TeamCard';
 import SectionHeader from '@/components/SectionHeader';
 import Reveal from '@/components/motion/Reveal';
 import Icon from '@/components/Icon';
@@ -34,7 +33,7 @@ export async function generateMetadata({ params }) {
 
 export default async function ServiceDetailPage({ params }) {
   const { slug } = await params;
-  const [service, team] = await Promise.all([getServiceBySlug(slug), getTeam()]);
+  const service = await getServiceBySlug(slug);
   if (!service) return notFound();
 
   const siteUrl = getSiteUrl();
@@ -134,22 +133,6 @@ export default async function ServiceDetailPage({ params }) {
           )}
         </div>
       </section>
-
-      {/* Meet the team */}
-      {team.length > 0 && (
-        <section className="section section--grey">
-          <div className="container-x">
-            <SectionHeader eyebrow="Meet the Wizards" heading="The team behind the work" />
-            <div className="team-grid">
-              {team.slice(0, 4).map((m) => (
-                <Reveal key={m._id || m.name}>
-                  <TeamCard member={m} />
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
     </>
   );
 }
