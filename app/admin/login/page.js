@@ -17,17 +17,32 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const res = await signIn('credentials', { redirect: false, email, password });
+    let res;
+    try {
+      res = await signIn('credentials', { redirect: false, email, password });
+    } catch (err) {
+      // signIn throws on a network failure, or when the callback endpoint 500s
+      // without a parseable body (e.g. missing NEXTAUTH_SECRET in production).
+      setLoading(false);
+      setError('Sign-in failed. Please try again, or check the server configuration.');
+      return;
+    }
     setLoading(false);
-    if (res?.ok) {
-      router.push('/admin');
-      router.refresh();
-    } else if (res?.error === 'CredentialsSignin') {
+
+    // `res.ok` is only the HTTP status of the callback request — it is 200 even
+    // when authorize() rejected the credentials. `res.error` is the real signal,
+    // so it must be checked first or failures silently look like successes.
+    if (res?.error === 'CredentialsSignin') {
       // authorize() returned null — wrong password, or the DB couldn't be
       // reached (see server logs; check MONGODB_URI + Atlas IP allow-list).
       setError('Invalid email or password.');
+    } else if (res?.error) {
+      // Configuration / provider error surfaced by NextAuth.
+      setError('Sign-in failed. Please try again, or check the server configuration.');
+    } else if (res?.ok) {
+      router.push('/admin');
+      router.refresh();
     } else {
-      // 500 / misconfiguration — usually a missing NEXTAUTH_SECRET in production.
       setError('Sign-in failed. Please try again, or check the server configuration.');
     }
   }

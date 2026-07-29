@@ -75,11 +75,6 @@
   display: block;
 }
 
-.hero__line:last-child,
-.hero__title .hero__line:nth-child(3) {
-  color: var(--blue-500);
-}
-
 .hero__subline {
   max-width: 46ch;
   font-size: clamp(1.02rem, 1.5vw, 1.2rem);
