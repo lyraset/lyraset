@@ -1,6 +1,7 @@
 import Image from 'next/image';
 
-// Intrinsic aspect ratio of public/Logo.png (3375 × 1125 = 3:1).
+// Intrinsic aspect ratio of public/Logo.png (2172 × 724 = 3:1). If the artwork
+// is ever re-exported at a different ratio, update this constant to match.
 const RATIO = 3375 / 1125;
 
 /**

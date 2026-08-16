@@ -20,14 +20,49 @@ export const MediaSchema = new Schema(
   { _id: false }
 );
 
-/** Reusable embedded SEO block for per-entity overrides. */
+/** A question/answer pair. Rendered on the page AND emitted as FAQPage JSON-LD. */
+export const FaqSchema = new Schema(
+  {
+    question: { type: String, default: '' },
+    answer: { type: String, default: '' },
+  },
+  { _id: false }
+);
+
+/**
+ * Reusable embedded SEO block for per-entity overrides.
+ *
+ * Covers three concerns the admin controls per page:
+ *   - metadata      title/description/ogImage/canonical
+ *   - indexing      noindex (also drives robots.txt + sitemap exclusion),
+ *                   sitemapExclude, priority, changeFrequency
+ *   - structured    schemaType picks the WebPage subtype; faq emits FAQPage
+ */
 export const SeoSchema = new Schema(
   {
     title: { type: String, default: '' },
     description: { type: String, default: '' },
+    keywords: { type: [String], default: [] },
     ogImage: { type: MediaSchema, default: () => ({}) },
     canonical: { type: String, default: '' },
     noindex: { type: Boolean, default: false },
+
+    // Sitemap controls (blank/undefined = use the route defaults in lib/routes).
+    sitemapExclude: { type: Boolean, default: false },
+    priority: { type: Number, default: null },
+    changeFrequency: {
+      type: String,
+      enum: ['', 'always', 'hourly', 'daily', 'weekly', 'monthly', 'yearly', 'never'],
+      default: '',
+    },
+
+    // Structured data.
+    schemaType: {
+      type: String,
+      enum: ['WebPage', 'AboutPage', 'ContactPage', 'CollectionPage', 'FAQPage', 'ProfilePage'],
+      default: 'WebPage',
+    },
+    faq: { type: [FaqSchema], default: [] },
   },
   { _id: false }
 );

@@ -13,6 +13,8 @@ import { slugify } from '@/lib/utils';
  */
 export default function FieldRenderer({ field, value, onChange }) {
   const { type, label, hint, name } = field;
+  // Fields the schema marks read-only (e.g. a slug pinned to a code route).
+  const disabled = Boolean(field.disabled);
 
   const control = () => {
     switch (type) {
@@ -25,6 +27,7 @@ export default function FieldRenderer({ field, value, onChange }) {
             value={value ?? ''}
             onChange={(e) => onChange(e.target.value)}
             placeholder={field.placeholder}
+            disabled={disabled}
           />
         );
 
@@ -48,7 +51,12 @@ export default function FieldRenderer({ field, value, onChange }) {
 
       case 'select':
         return (
-          <select className="admin-select" value={value ?? ''} onChange={(e) => onChange(e.target.value)}>
+          <select
+            className="admin-select"
+            value={value ?? ''}
+            onChange={(e) => onChange(e.target.value)}
+            disabled={disabled}
+          >
             <option value="">— Select —</option>
             {(field.options || []).map((o) => (
               <option key={o.value ?? o} value={o.value ?? o}>
@@ -105,6 +113,7 @@ export default function FieldRenderer({ field, value, onChange }) {
             value={value ?? ''}
             onChange={(e) => onChange(e.target.value)}
             placeholder={field.placeholder}
+            disabled={disabled}
           />
         );
     }
@@ -200,7 +209,9 @@ function MediaList({ value, onChange, resourceType }) {
 
 // ---- Socials list ---------------------------------------------------------
 function SocialsList({ value, onChange }) {
-  const platforms = ['instagram', 'facebook', 'x', 'linkedin', 'youtube', 'tiktok'];
+  // Keep in sync with the glyphs in components/Icon.js — a platform with no
+  // icon renders as an empty link in the footer and contact panel.
+  const platforms = ['instagram', 'facebook', 'x', 'linkedin', 'pinterest', 'youtube', 'tiktok'];
   const set = (i, key, v) => onChange(value.map((row, j) => (j === i ? { ...row, [key]: v } : row)));
   const add = () => onChange([...value, { platform: 'instagram', url: '' }]);
   const remove = (i) => onChange(value.filter((_, j) => j !== i));

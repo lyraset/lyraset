@@ -1,13 +1,15 @@
-import { getCaseStudies, getCategories } from '@/lib/data';
+import { getPageWithFallback, getSettings, getCaseStudies } from '@/lib/data';
 import { buildMetadata } from '@/lib/metadata';
-import PageHero from '@/components/PageHero';
-import PortfolioGrid from '@/components/PortfolioGrid';
-import '@/styles/portfolio.scss';
+import SectionRenderer from '@/components/sections/SectionRenderer';
+import { PageJsonLd } from '@/components/JsonLd';
+import { itemListSchema } from '@/lib/schema';
 
 export const revalidate = 3600;
 
-export function generateMetadata() {
+export async function generateMetadata() {
+  const page = await getPageWithFallback('portfolio');
   return buildMetadata({
+    seo: page?.seo,
     path: '/portfolio',
     fallbackTitle: 'Portfolio',
     fallbackDescription:
@@ -16,20 +18,30 @@ export function generateMetadata() {
 }
 
 export default async function PortfolioPage() {
-  const [items, categories] = await Promise.all([getCaseStudies(), getCategories()]);
+  const [page, settings, cases] = await Promise.all([
+    getPageWithFallback('portfolio'),
+    getSettings(),
+    getCaseStudies(),
+  ]);
 
   return (
     <>
-      <PageHero
-        eyebrow="Creative Work"
-        title="Measurable growth stories"
-        subtitle="A curated showcase of campaigns, visuals, and digital experiences we've crafted for brands that mean business."
+      <PageJsonLd
+        path="/portfolio"
+        title={page?.seo?.title || page?.title || 'Portfolio'}
+        description={page?.seo?.description}
+        type={page?.seo?.schemaType || 'CollectionPage'}
+        updatedAt={page?.updatedAt}
+        breadcrumb={[{ name: 'Portfolio', path: '/portfolio' }]}
+        faq={page?.seo?.faq}
+        nodes={[
+          itemListSchema(
+            cases.map((c) => ({ name: c.title, path: `/portfolio/${c.slug}` })),
+            { name: 'Case studies' }
+          ),
+        ]}
       />
-      <section className="section">
-        <div className="container-x">
-          <PortfolioGrid items={items} categories={categories} />
-        </div>
-      </section>
+      <SectionRenderer sections={page?.sections || []} settings={settings} />
     </>
   );
 }

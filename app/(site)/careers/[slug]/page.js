@@ -5,8 +5,9 @@ import { buildMetadata } from '@/lib/metadata';
 import ApplicationForm from '@/components/forms/ApplicationForm';
 import Reveal from '@/components/motion/Reveal';
 import Icon from '@/components/Icon';
-import { JobPostingJsonLd, BreadcrumbJsonLd } from '@/components/JsonLd';
-import { getSiteUrl } from '@/lib/site';
+import { PageJsonLd } from '@/components/JsonLd';
+import { jobPostingSchema } from '@/lib/schema';
+import { getSettings } from '@/lib/data';
 import '@/styles/careers.scss';
 
 export const revalidate = 3600;
@@ -30,19 +31,22 @@ export async function generateMetadata({ params }) {
 
 export default async function JobDetailPage({ params }) {
   const { slug } = await params;
-  const job = await getJobBySlug(slug);
+  const [job, settings] = await Promise.all([getJobBySlug(slug), getSettings()]);
   if (!job) return notFound();
-  const siteUrl = getSiteUrl();
 
   return (
     <>
-      <JobPostingJsonLd job={job} />
-      <BreadcrumbJsonLd
-        items={[
-          { name: 'Home', url: siteUrl },
-          { name: 'Careers', url: `${siteUrl}/careers` },
-          { name: job.title, url: `${siteUrl}/careers/${slug}` },
+      <PageJsonLd
+        path={`/careers/${slug}`}
+        title={job.seo?.title || job.title}
+        description={job.seo?.description || job.summary}
+        updatedAt={job.updatedAt}
+        breadcrumb={[
+          { name: 'Careers', path: '/careers' },
+          { name: job.title, path: `/careers/${slug}` },
         ]}
+        faq={job.seo?.faq}
+        nodes={[jobPostingSchema(job, { settings })]}
       />
 
       <section className="section job-detail__hero">

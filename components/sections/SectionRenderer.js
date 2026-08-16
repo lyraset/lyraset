@@ -1,5 +1,13 @@
 import dynamic from 'next/dynamic';
-import { getServices, getCaseStudies, getTestimonials, getSettings } from '@/lib/data';
+import {
+  getServices,
+  getCaseStudies,
+  getTestimonials,
+  getSettings,
+  getCategories,
+  getTeam,
+  getJobs,
+} from '@/lib/data';
 import PlatformMarquee from './PlatformMarquee';
 import ServicesGrid from './ServicesGrid';
 import PortfolioPreview from './PortfolioPreview';
@@ -10,6 +18,13 @@ import WorkWithUsForm from './WorkWithUsForm';
 import AboutBlocks from './AboutBlocks';
 import RichText from './RichText';
 import CtaMarquee from './CtaMarquee';
+import PageHeroSection from './PageHeroSection';
+import ServicesList from './ServicesList';
+import PortfolioGallery from './PortfolioGallery';
+import TeamGrid from './TeamGrid';
+import JobsList from './JobsList';
+import ContactBlock from './ContactBlock';
+import FaqSection from './FaqSection';
 
 // Framer-Motion-heavy sections are code-split so pages that don't use them
 // (e.g. privacy/terms) never ship the animation runtime. They still SSR.
@@ -25,11 +40,15 @@ const TestimonialSlider = dynamic(() => import('./TestimonialSlider'));
  */
 export default async function SectionRenderer({ sections = [], settings }) {
   const types = new Set(sections.map((s) => s.type));
+  const needs = (...keys) => keys.some((k) => types.has(k));
 
-  const [services, caseStudies, testimonials, site] = await Promise.all([
-    types.has('servicesGrid') ? getServices() : Promise.resolve([]),
-    types.has('portfolioPreview') ? getCaseStudies() : Promise.resolve([]),
-    types.has('testimonialSlider') ? getTestimonials() : Promise.resolve([]),
+  const [services, caseStudies, testimonials, categories, team, jobs, site] = await Promise.all([
+    needs('servicesGrid', 'servicesList') ? getServices() : Promise.resolve([]),
+    needs('portfolioPreview', 'portfolioGallery') ? getCaseStudies() : Promise.resolve([]),
+    needs('testimonialSlider') ? getTestimonials() : Promise.resolve([]),
+    needs('portfolioGallery') ? getCategories() : Promise.resolve([]),
+    needs('teamGrid') ? getTeam() : Promise.resolve([]),
+    needs('jobsList') ? getJobs() : Promise.resolve([]),
     settings ? Promise.resolve(settings) : getSettings(),
   ]);
 
@@ -41,14 +60,35 @@ export default async function SectionRenderer({ sections = [], settings }) {
         switch (section.type) {
           case 'hero':
             return <Hero key={key} data={data} settings={site} />;
+          case 'pageHero':
+            return <PageHeroSection key={key} data={data} settings={site} />;
           case 'statsBar':
             return <StatsBar key={key} stats={site?.stats || []} />;
           case 'platformMarquee':
             return <PlatformMarquee key={key} platforms={site?.platforms || []} />;
           case 'servicesGrid':
             return <ServicesGrid key={key} data={data} services={services} />;
+          case 'servicesList':
+            return <ServicesList key={key} data={data} services={services} />;
           case 'portfolioPreview':
             return <PortfolioPreview key={key} data={data} caseStudies={caseStudies} />;
+          case 'portfolioGallery':
+            return (
+              <PortfolioGallery
+                key={key}
+                data={data}
+                caseStudies={caseStudies}
+                categories={categories}
+              />
+            );
+          case 'teamGrid':
+            return <TeamGrid key={key} data={data} team={team} />;
+          case 'jobsList':
+            return <JobsList key={key} data={data} jobs={jobs} />;
+          case 'contactBlock':
+            return <ContactBlock key={key} data={data} settings={site} />;
+          case 'faq':
+            return <FaqSection key={key} data={data} />;
           case 'processTimeline':
             return <ProcessTimeline key={key} data={data} />;
           case 'testimonialSlider':

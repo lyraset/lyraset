@@ -6,6 +6,11 @@ const withBundleAnalyzer = bundleAnalyzer({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Build output directory. Defaults to .next; override with NEXT_DIST_DIR to
+  // run a production build without touching the directory a running `next dev`
+  // has open. Mixing the two leaves the dev server requiring chunks the build
+  // replaced ("Cannot find module './5611.js'"). See `npm run build:check`.
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,

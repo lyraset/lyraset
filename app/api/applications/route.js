@@ -25,10 +25,16 @@ export async function POST(req) {
   if (!allowed) return fail('Too many requests. Please try again shortly.', 429);
 
   const body = (await readJson(req)) || {};
+
+  // Honeypot, checked before validation — see the matching note in
+  // app/api/leads/route.js. A 422 naming `company` would tell a bot exactly
+  // which field to stop filling; a 200 tells it nothing.
+  if (typeof body.company === 'string' && body.company.trim() !== '') {
+    return ok({ item: null });
+  }
+
   const { success, data, errors } = safeValidate(applicationSchema, body);
   if (!success) return fail('Validation failed', 422, { errors });
-
-  if (data.company) return ok({ item: null }); // honeypot
 
   if (!isDbConfigured()) return ok({ item: null, demo: true });
 

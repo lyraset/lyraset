@@ -5,6 +5,8 @@
 
 # next.js
 /.next/
+# Isolated output for `npm run build:check` (see next.config.mjs distDir).
+/.next-check/
 /out/
 next-env.d.ts
 

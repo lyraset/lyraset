@@ -1,16 +1,15 @@
-import Link from 'next/link';
-import { getServices } from '@/lib/data';
+import { getPageWithFallback, getSettings, getServices } from '@/lib/data';
 import { buildMetadata } from '@/lib/metadata';
-import PageHero from '@/components/PageHero';
-import ServiceCard from '@/components/cards/ServiceCard';
-import Reveal from '@/components/motion/Reveal';
-import Icon from '@/components/Icon';
-import '@/styles/services.scss';
+import SectionRenderer from '@/components/sections/SectionRenderer';
+import { PageJsonLd } from '@/components/JsonLd';
+import { itemListSchema } from '@/lib/schema';
 
 export const revalidate = 3600;
 
-export function generateMetadata() {
+export async function generateMetadata() {
+  const page = await getPageWithFallback('services');
   return buildMetadata({
+    seo: page?.seo,
     path: '/services',
     fallbackTitle: 'Services',
     fallbackDescription:
@@ -19,31 +18,30 @@ export function generateMetadata() {
 }
 
 export default async function ServicesPage() {
-  const services = await getServices();
+  const [page, settings, services] = await Promise.all([
+    getPageWithFallback('services'),
+    getSettings(),
+    getServices(),
+  ]);
 
   return (
     <>
-      <PageHero
-        eyebrow="What We Offer"
-        title="Services engineered for growth"
-        subtitle="360° digital marketing — social media, paid ads, video production, design, growth strategy, and web development. Pick a service to see how we run it."
-      >
-        <Link href="/contact" className="btn btn-primary">
-          Start Your Growth <span className="btn-arrow"><Icon name="arrow-right" size={16} /></span>
-        </Link>
-      </PageHero>
-
-      <section className="section section--grey">
-        <div className="container-x">
-          <div className="services-grid">
-            {services.map((s, i) => (
-              <Reveal key={s.slug} delay={(i % 3) * 0.05}>
-                <ServiceCard service={s} />
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
+      <PageJsonLd
+        path="/services"
+        title={page?.seo?.title || page?.title || 'Services'}
+        description={page?.seo?.description}
+        type={page?.seo?.schemaType || 'CollectionPage'}
+        updatedAt={page?.updatedAt}
+        breadcrumb={[{ name: 'Services', path: '/services' }]}
+        faq={page?.seo?.faq}
+        nodes={[
+          itemListSchema(
+            services.map((s) => ({ name: s.title, path: `/services/${s.slug}` })),
+            { name: 'Services' }
+          ),
+        ]}
+      />
+      <SectionRenderer sections={page?.sections || []} settings={settings} />
     </>
   );
 }

@@ -81,8 +81,24 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 68px;
+  height: 88px;
   gap: 1rem;
+}
+
+// The brand wordmark renders at 60px tall (set by next/image in SiteHeader).
+// Below 640px the bar tightens up and the logo scales with it — a fixed height
+// plus `width: auto` keeps the 3:1 ratio without the intrinsic-size blowup
+// that setting both to auto would cause.
+@media (max-width: 640px) {
+  .navbar-main__inner {
+    height: 68px;
+  }
+
+  // Scoped to the navbar — `.brand` is also used by the footer.
+  .navbar-main__inner .brand .site-logo {
+    height: 42px;
+    width: auto;
+  }
 }
 
 // ---- Brand ----------------------------------------------------------------

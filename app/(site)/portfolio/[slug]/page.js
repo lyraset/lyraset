@@ -5,8 +5,8 @@ import { buildMetadata } from '@/lib/metadata';
 import MediaImage from '@/components/MediaImage';
 import Reveal from '@/components/motion/Reveal';
 import Icon from '@/components/Icon';
-import { BreadcrumbJsonLd } from '@/components/JsonLd';
-import { getSiteUrl } from '@/lib/site';
+import { PageJsonLd } from '@/components/JsonLd';
+import { caseStudySchema } from '@/lib/schema';
 import '@/styles/portfolio.scss';
 
 export const revalidate = 3600;
@@ -32,7 +32,6 @@ export default async function CaseStudyPage({ params }) {
   const { slug } = await params;
   const item = await getCaseStudyBySlug(slug);
   if (!item) return notFound();
-  const siteUrl = getSiteUrl();
 
   const blocks = [
     ['The Challenge', item.challenge],
@@ -42,12 +41,18 @@ export default async function CaseStudyPage({ params }) {
 
   return (
     <>
-      <BreadcrumbJsonLd
-        items={[
-          { name: 'Home', url: siteUrl },
-          { name: 'Portfolio', url: `${siteUrl}/portfolio` },
-          { name: item.title, url: `${siteUrl}/portfolio/${slug}` },
+      <PageJsonLd
+        path={`/portfolio/${slug}`}
+        title={item.seo?.title || item.title}
+        description={item.seo?.description || item.summary}
+        image={item.coverImage?.url}
+        updatedAt={item.updatedAt}
+        breadcrumb={[
+          { name: 'Portfolio', path: '/portfolio' },
+          { name: item.title, path: `/portfolio/${slug}` },
         ]}
+        faq={item.seo?.faq}
+        nodes={[caseStudySchema(item)]}
       />
 
       <section className="section case-detail__hero">

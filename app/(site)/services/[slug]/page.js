@@ -8,8 +8,8 @@ import LeadForm from '@/components/forms/LeadForm';
 import SectionHeader from '@/components/SectionHeader';
 import Reveal from '@/components/motion/Reveal';
 import Icon from '@/components/Icon';
-import { ServiceJsonLd, BreadcrumbJsonLd } from '@/components/JsonLd';
-import { getSiteUrl } from '@/lib/site';
+import { PageJsonLd } from '@/components/JsonLd';
+import { serviceSchema } from '@/lib/schema';
 import '@/styles/service-detail.scss';
 
 export const revalidate = 3600;
@@ -36,17 +36,20 @@ export default async function ServiceDetailPage({ params }) {
   const service = await getServiceBySlug(slug);
   if (!service) return notFound();
 
-  const siteUrl = getSiteUrl();
-
   return (
     <>
-      <ServiceJsonLd service={service} />
-      <BreadcrumbJsonLd
-        items={[
-          { name: 'Home', url: siteUrl },
-          { name: 'Services', url: `${siteUrl}/services` },
-          { name: service.title, url: `${siteUrl}/services/${slug}` },
+      <PageJsonLd
+        path={`/services/${slug}`}
+        title={service.seo?.title || service.title}
+        description={service.seo?.description || service.shortBlurb}
+        image={service.heroImage?.url}
+        updatedAt={service.updatedAt}
+        breadcrumb={[
+          { name: 'Services', path: '/services' },
+          { name: service.title, path: `/services/${slug}` },
         ]}
+        faq={service.seo?.faq}
+        nodes={[serviceSchema(service)]}
       />
 
       {/* Hero */}

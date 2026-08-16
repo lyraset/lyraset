@@ -106,7 +106,7 @@ export default function SiteHeader({ settings, services = [] }) {
       <div className="navbar-main">
         <div className="container-x navbar-main__inner">
           <Link href="/" className="brand" aria-label={`${brand} home`}>
-            <Logo height={44} priority />
+            <Logo height={60} priority />
           </Link>
 
           <nav className="nav-links" aria-label="Primary">
@@ -171,7 +171,7 @@ export default function SiteHeader({ settings, services = [] }) {
       {/* Mobile offcanvas */}
       <div className={`offcanvas-menu ${menuOpen ? 'is-open' : ''}`} role="dialog" aria-modal="true">
         <div className="offcanvas-menu__head">
-          <Logo light height={26} />
+          <Logo light height={34} />
           <button className="nav-toggle" onClick={() => setMenuOpen(false)} aria-label="Close menu">
             <Icon name="close" size={24} />
           </button>

@@ -25,11 +25,17 @@ export async function POST(req) {
   if (!allowed) return fail('Too many requests. Please try again shortly.', 429);
 
   const body = (await readJson(req)) || {};
+
+  // Honeypot: `company` is hidden in the form, so only a bot fills it. This is
+  // checked BEFORE validation on purpose — the schema types it as max-length-0,
+  // so validating first would reject the bot with a 422 naming the field and
+  // teach it which input to leave alone. Answer 200 and drop the submission.
+  if (typeof body.company === 'string' && body.company.trim() !== '') {
+    return ok({ item: null });
+  }
+
   const { success, data, errors } = safeValidate(leadSchema, body);
   if (!success) return fail('Validation failed', 422, { errors });
-
-  // Honeypot: `company` must be empty (bots fill it).
-  if (data.company) return ok({ item: null }); // silently accept, drop
 
   if (!isDbConfigured()) {
     // No DB: accept so the UX still succeeds in demo mode, but nothing persists.
