@@ -1,0 +1,295 @@
+/* ==========================================================================
+   LYRASET Workspace — the portal shell
+   Sidebar on desktop, a collapsing top bar on phones, because most employees
+   clock in from a phone.
+   ========================================================================== */
+
+.ws-shell {
+  display: flex;
+  min-height: 100vh;
+  align-items: stretch;
+}
+
+/* --- Sidebar ------------------------------------------------------------- */
+
+.ws-sidebar {
+  width: 15.5rem;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1rem;
+  background: var(--ws-surface);
+  border-right: 1px solid var(--ws-line);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.ws-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1;
+}
+
+.ws-nav-group {
+  margin-top: 1rem;
+}
+.ws-nav-group:first-child {
+  margin-top: 0;
+}
+.ws-nav-group-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ws-faint);
+  margin: 0 0 0.35rem 0.75rem;
+}
+
+.ws-nav-link {
+  color: var(--ws-muted);
+  text-decoration: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--ws-radius-sm);
+  font-size: 0.925rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  transition: background-color 0.15s ease;
+}
+.ws-nav-link:hover,
+.ws-nav-link:focus {
+  color: var(--ws-text);
+  background: var(--ws-surface-2);
+}
+.ws-nav-link[aria-current='page'] {
+  color: var(--ws-text);
+  background: var(--ws-accent-soft);
+  box-shadow: inset 2px 0 0 var(--ws-accent);
+}
+
+.ws-nav-count {
+  background: var(--ws-accent);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.05rem 0.4rem;
+  min-width: 1.25rem;
+  text-align: center;
+}
+
+/* --- Signed-in user block ------------------------------------------------ */
+
+.ws-user {
+  border-top: 1px solid var(--ws-line);
+  padding-top: 1rem;
+  margin-top: 1rem;
+}
+.ws-user-name {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.ws-user-role {
+  margin: 0 0 0.75rem;
+  font-size: 0.83rem;
+}
+
+/* --- Main column --------------------------------------------------------- */
+
+.ws-main {
+  flex: 1;
+  min-width: 0;
+  padding: 1.75rem clamp(1rem, 3vw, 2.5rem) 3rem;
+}
+
+.ws-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.ws-page {
+  max-width: 78rem;
+}
+.ws-page-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+}
+.ws-page-lead {
+  margin: 0.3rem 0 1.5rem;
+  font-size: 0.95rem;
+}
+
+.ws-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+.ws-page-head .ws-page-lead {
+  margin-bottom: 0;
+}
+.ws-page-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* --- Notification bell --------------------------------------------------- */
+
+.ws-bell {
+  position: relative;
+  background: transparent;
+  border: 1px solid var(--ws-line);
+  color: var(--ws-text);
+  border-radius: var(--ws-radius-sm);
+  width: 2.35rem;
+  height: 2.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ws-bell:hover {
+  background: var(--ws-surface-2);
+}
+.ws-bell-count {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.35rem;
+  background: var(--ws-danger);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.05rem 0.35rem;
+  min-width: 1.1rem;
+}
+
+.ws-bell-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  width: min(22rem, calc(100vw - 2rem));
+  max-height: 24rem;
+  overflow-y: auto;
+  background: var(--ws-surface);
+  border: 1px solid var(--ws-line);
+  border-radius: var(--ws-radius);
+  padding: 0.5rem;
+  z-index: 40;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+.ws-bell-wrap {
+  position: relative;
+}
+.ws-bell-item {
+  display: block;
+  padding: 0.6rem 0.65rem;
+  border-radius: var(--ws-radius-sm);
+  text-decoration: none;
+  color: var(--ws-text);
+  border-bottom: 1px solid var(--ws-line-soft);
+}
+.ws-bell-item:last-child {
+  border-bottom: 0;
+}
+.ws-bell-item:hover {
+  background: var(--ws-surface-2);
+  color: var(--ws-text);
+}
+.ws-bell-item.is-unread {
+  background: var(--ws-accent-soft);
+}
+.ws-bell-item-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.ws-bell-item-body {
+  margin: 0.15rem 0 0;
+  font-size: 0.83rem;
+  color: var(--ws-muted);
+}
+
+/* --- Mobile: the sidebar becomes a top bar ------------------------------- */
+
+.ws-mobile-bar {
+  display: none;
+}
+
+@media (max-width: 991.98px) {
+  .ws-shell {
+    flex-direction: column;
+  }
+
+  .ws-mobile-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--ws-surface);
+    border-bottom: 1px solid var(--ws-line);
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+  .ws-mobile-bar .ws-brand-mark {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  .ws-sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    border-right: 0;
+    border-bottom: 1px solid var(--ws-line);
+    padding: 0.75rem 1rem 1rem;
+  }
+  .ws-sidebar[hidden] {
+    display: none;
+  }
+  .ws-sidebar .ws-brand-mark {
+    display: none;
+  }
+  .ws-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .ws-nav-group {
+    margin-top: 0.5rem;
+    width: 100%;
+  }
+  .ws-nav-group-title {
+    margin-left: 0;
+  }
+  .ws-nav-link {
+    border: 1px solid var(--ws-line);
+    flex: 1 1 auto;
+    justify-content: center;
+    text-align: center;
+  }
+  .ws-nav-link[aria-current='page'] {
+    box-shadow: none;
+    border-color: var(--ws-accent);
+  }
+
+  .ws-main {
+    padding: 1.25rem 1rem 2.5rem;
+  }
+  .ws-page-title {
+    font-size: 1.35rem;
+  }
+}

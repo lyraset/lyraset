@@ -1,28 +1,79 @@
-/* LYRASET Workspace — portal styles (loaded only under /workspace) */
+/* ==========================================================================
+   LYRASET Workspace — tokens, typography, controls
+   Loaded only from app/workspace/layout.js, so none of it reaches the public
+   site. Bootstrap comes from the root layout; everything here either themes a
+   Bootstrap class for the dark shell or adds a ws- class of its own.
+   ========================================================================== */
+
 .ws-root {
   --ws-bg: #070e21;
   --ws-surface: #0e1a36;
   --ws-surface-2: #14244a;
+  --ws-surface-3: #1b2f5c;
   --ws-line: #22345e;
+  --ws-line-soft: #1a2950;
   --ws-text: #e8eefc;
   --ws-muted: #93a3c7;
+  --ws-faint: #5d6d93;
   --ws-accent: #3d7bff;
   --ws-accent-press: #2c63db;
+  --ws-accent-soft: rgba(61, 123, 255, 0.14);
+
+  --ws-ok: #35c98a;
+  --ws-ok-soft: rgba(53, 201, 138, 0.14);
+  --ws-warn: #f0b429;
+  --ws-warn-soft: rgba(240, 180, 41, 0.14);
+  --ws-danger: #f2626b;
+  --ws-danger-soft: rgba(242, 98, 107, 0.14);
+  --ws-info: #56b6e6;
+  --ws-info-soft: rgba(86, 182, 230, 0.14);
+
+  --ws-radius: 12px;
+  --ws-radius-sm: 8px;
+
   min-height: 100vh;
   background: var(--ws-bg);
   color: var(--ws-text);
+  font-family:
+    var(--font-body),
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  /* The public site's body is white; the portal owns its own surface. */
+  color-scheme: dark;
 }
 
 .ws-root :focus-visible {
   outline: 2px solid var(--ws-accent);
   outline-offset: 2px;
+  border-radius: 4px;
 }
 
-.ws-brand-mark {
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  margin: 0 0 1.5rem;
+.ws-root a {
+  color: var(--ws-accent);
 }
+.ws-root a:hover {
+  color: #6b9aff;
+}
+
+.ws-root hr {
+  border-color: var(--ws-line);
+  opacity: 1;
+}
+
+/* Motion confirms an action and never decorates one. */
+@media (prefers-reduced-motion: reduce) {
+  .ws-root *,
+  .ws-root *::before,
+  .ws-root *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* --- Text ---------------------------------------------------------------- */
 
 .ws-muted,
 .ws-login-lead,
@@ -31,39 +82,188 @@
   color: var(--ws-muted);
 }
 
-.ws-alert {
-  padding: 0.6rem 0.85rem;
-  font-size: 0.925rem;
+.ws-faint {
+  color: var(--ws-faint);
 }
 
-/* Buttons */
+.ws-brand-mark {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  margin: 0 0 1.5rem;
+  color: var(--ws-text);
+}
+
+.ws-mono {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+.ws-label-sm {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ws-faint);
+  margin: 0 0 0.2rem;
+}
+
+/* --- Buttons ------------------------------------------------------------- */
+
 .ws-btn-primary {
   background: var(--ws-accent);
-  border: 0;
+  border: 1px solid var(--ws-accent);
   color: #fff;
   font-weight: 600;
   padding: 0.7rem 1rem;
+  border-radius: var(--ws-radius-sm);
+  transition: background-color 0.15s ease;
 }
 .ws-btn-primary:hover,
+.ws-btn-primary:focus,
 .ws-btn-primary:active {
   background: var(--ws-accent-press);
+  border-color: var(--ws-accent-press);
   color: #fff;
 }
 .ws-btn-primary:disabled {
-  opacity: 0.65;
+  opacity: 0.55;
   color: #fff;
 }
+
 .ws-btn-ghost {
   background: transparent;
   border: 1px solid var(--ws-line);
   color: var(--ws-text);
+  border-radius: var(--ws-radius-sm);
+  transition: background-color 0.15s ease;
 }
-.ws-btn-ghost:hover {
+.ws-btn-ghost:hover,
+.ws-btn-ghost:focus {
   background: var(--ws-surface-2);
   color: var(--ws-text);
+  border-color: var(--ws-line);
+}
+.ws-btn-ghost:disabled {
+  opacity: 0.5;
+  color: var(--ws-muted);
 }
 
-/* Login */
+.ws-btn-danger {
+  background: transparent;
+  border: 1px solid rgba(242, 98, 107, 0.5);
+  color: var(--ws-danger);
+  border-radius: var(--ws-radius-sm);
+}
+.ws-btn-danger:hover,
+.ws-btn-danger:focus {
+  background: var(--ws-danger-soft);
+  color: var(--ws-danger);
+  border-color: var(--ws-danger);
+}
+
+.ws-btn-sm {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.85rem;
+}
+
+/* --- Forms --------------------------------------------------------------- */
+
+.ws-label {
+  font-size: 0.9rem;
+  color: var(--ws-text);
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+}
+
+.ws-input,
+.ws-root .form-control,
+.ws-root .form-select {
+  background: var(--ws-bg);
+  border: 1px solid var(--ws-line);
+  color: var(--ws-text);
+  border-radius: var(--ws-radius-sm);
+}
+.ws-input:focus,
+.ws-root .form-control:focus,
+.ws-root .form-select:focus {
+  background: var(--ws-bg);
+  border-color: var(--ws-accent);
+  color: var(--ws-text);
+  box-shadow: 0 0 0 3px var(--ws-accent-soft);
+}
+.ws-input::placeholder,
+.ws-root .form-control::placeholder {
+  color: var(--ws-faint);
+}
+.ws-root .form-control:disabled,
+.ws-root .form-select:disabled {
+  background: var(--ws-surface);
+  color: var(--ws-muted);
+}
+.ws-root .form-select option {
+  background: var(--ws-surface);
+  color: var(--ws-text);
+}
+.ws-root .form-check-input {
+  background-color: var(--ws-bg);
+  border-color: var(--ws-line);
+}
+.ws-root .form-check-input:checked {
+  background-color: var(--ws-accent);
+  border-color: var(--ws-accent);
+}
+.ws-root .form-check-label,
+.ws-root .form-text {
+  color: var(--ws-muted);
+}
+.ws-root .input-group-text {
+  background: var(--ws-surface-2);
+  border-color: var(--ws-line);
+  color: var(--ws-muted);
+}
+
+.ws-field-error {
+  color: var(--ws-danger);
+  font-size: 0.85rem;
+  margin: 0.3rem 0 0;
+}
+
+.ws-required::after {
+  content: ' *';
+  color: var(--ws-danger);
+}
+
+/* --- Alerts -------------------------------------------------------------- */
+
+.ws-alert {
+  padding: 0.7rem 0.95rem;
+  font-size: 0.925rem;
+  border-radius: var(--ws-radius-sm);
+  border: 1px solid transparent;
+  margin-bottom: 1rem;
+}
+.ws-root .alert-info.ws-alert {
+  background: var(--ws-info-soft);
+  border-color: rgba(86, 182, 230, 0.35);
+  color: #bfe4f7;
+}
+.ws-root .alert-success.ws-alert {
+  background: var(--ws-ok-soft);
+  border-color: rgba(53, 201, 138, 0.35);
+  color: #b6ecd3;
+}
+.ws-root .alert-warning.ws-alert {
+  background: var(--ws-warn-soft);
+  border-color: rgba(240, 180, 41, 0.35);
+  color: #f6dfa8;
+}
+.ws-root .alert-danger.ws-alert {
+  background: var(--ws-danger-soft);
+  border-color: rgba(242, 98, 107, 0.35);
+  color: #f7c3c6;
+}
+
+/* --- Login --------------------------------------------------------------- */
+
 .ws-login {
   min-height: 100vh;
   display: grid;
@@ -85,23 +285,7 @@
 }
 .ws-login-lead {
   margin-bottom: 1.5rem;
-}
-.ws-label {
-  font-size: 0.9rem;
-  color: var(--ws-text);
-}
-.ws-input,
-.ws-input:focus {
-  background: var(--ws-bg);
-  border-color: var(--ws-line);
-  color: var(--ws-text);
-}
-.ws-input::placeholder {
-  color: #5d6d93;
-}
-.ws-input:focus {
-  border-color: var(--ws-accent);
-  box-shadow: none;
+  font-size: 0.95rem;
 }
 .ws-login-help {
   margin: 1.25rem 0 0;
@@ -109,104 +293,8 @@
   color: var(--ws-muted);
 }
 
-/* Portal shell */
-.ws-shell {
-  display: flex;
-  min-height: 100vh;
-}
-.ws-sidebar {
-  width: 15.5rem;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  padding: 1.5rem 1rem;
-  background: var(--ws-surface);
-  border-right: 1px solid var(--ws-line);
-}
-.ws-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  flex: 1;
-}
-.ws-nav-link {
-  color: var(--ws-muted);
-  text-decoration: none;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-}
-.ws-nav-link:hover {
-  color: var(--ws-text);
-  background: var(--ws-surface-2);
-}
-.ws-user {
-  border-top: 1px solid var(--ws-line);
-  padding-top: 1rem;
-  margin-top: 1rem;
-}
-.ws-user-name {
-  margin: 0;
-  font-weight: 600;
-}
-.ws-user-role {
-  margin: 0 0 0.75rem;
-  font-size: 0.875rem;
-}
-.ws-main {
-  flex: 1;
-  min-width: 0;
-  padding: 2rem clamp(1rem, 3vw, 2.5rem);
-}
-
-/* Pages */
-.ws-page {
-  max-width: 72rem;
-}
-.ws-page-title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin: 0;
-}
-.ws-page-lead {
-  margin: 0.25rem 0 1.75rem;
-}
-.ws-panel {
-  background: var(--ws-surface);
-  border: 1px solid var(--ws-line);
-  border-radius: 12px;
-  padding: 1.25rem 1.5rem;
-  margin-bottom: 1rem;
-}
-.ws-panel-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 0 0 0.35rem;
-}
-.ws-perms summary {
-  cursor: pointer;
-  color: var(--ws-muted);
-}
-.ws-perms ul {
-  margin: 0.75rem 0 0;
-  columns: 2;
-  color: var(--ws-muted);
-  font-size: 0.9rem;
-}
-
-@media (max-width: 991.98px) {
-  .ws-shell {
-    flex-direction: column;
-  }
-  .ws-sidebar {
-    width: 100%;
-    border-right: 0;
-    border-bottom: 1px solid var(--ws-line);
-  }
-  .ws-nav {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-  .ws-perms ul {
-    columns: 1;
+@media (max-width: 575.98px) {
+  .ws-login-panel {
+    padding: 1.5rem 1.25rem;
   }
 }
