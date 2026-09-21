@@ -63,7 +63,9 @@ async function main() {
 
     if (!existing) {
       await Page.create(seedPage);
-      console.log(`  + created  /${seedPage.slug === 'home' ? '' : seedPage.slug}  (${seedPage.sections.length} sections)`);
+      console.log(
+        `  + created  /${seedPage.slug === 'home' ? '' : seedPage.slug}  (${seedPage.sections.length} sections)`
+      );
       inserted += 1;
       continue;
     }
@@ -71,11 +73,7 @@ async function main() {
     // Page exists — never touch its sections or copy. Only backfill SEO keys
     // that the document has never had a value for.
     const seo = existing.seo || {};
-    const changed = fillMissing(seo, seedPage.seo || {}, [
-      'title',
-      'description',
-      'schemaType',
-    ]);
+    const changed = fillMissing(seo, seedPage.seo || {}, ['title', 'description', 'schemaType']);
     if (changed.length) {
       existing.seo = seo;
       await existing.save();
@@ -84,7 +82,9 @@ async function main() {
     }
   }
 
-  console.log(`\n✔ Pages: ${inserted} created, ${updated} backfilled, ${pages.length - inserted - updated} already current.`);
+  console.log(
+    `\n✔ Pages: ${inserted} created, ${updated} backfilled, ${pages.length - inserted - updated} already current.`
+  );
 
   // ---- SEO defaults --------------------------------------------------------
   // Read raw (.lean) rather than hydrating: Mongoose materialises nested-path
@@ -109,7 +109,8 @@ async function main() {
       if (isBlank(raw[key])) $set[key] = seoDefault[key];
     }
     for (const key of ['description', 'employeeCount', 'url']) {
-      if (isBlank(raw.organization?.[key])) $set[`organization.${key}`] = seoDefault.organization[key];
+      if (isBlank(raw.organization?.[key]))
+        $set[`organization.${key}`] = seoDefault.organization[key];
     }
 
     if (Object.keys($set).length) {

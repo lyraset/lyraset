@@ -71,7 +71,11 @@ test('an exempt user has no attendance at all', () => {
 
 test('PRESENT: in on time, full hours', () => {
   const s = schedFor(ali, '2026-09-21');
-  const r = run(s, { clockIn: at('2026-09-21', '09:58'), clockOut: at('2026-09-21', '19:05'), breaks: [] });
+  const r = run(s, {
+    clockIn: at('2026-09-21', '09:58'),
+    clockOut: at('2026-09-21', '19:05'),
+    breaks: [],
+  });
   assert.equal(r.status, STATUS.PRESENT);
   assert.equal(r.lateByMinutes, 0);
   assert.equal(r.earlyByMinutes, 0);
@@ -122,7 +126,11 @@ test('exactly on the threshold is not a half day', () => {
   const s = schedFor(ali, '2026-09-21');
   const r = run(s, { clockIn: at('2026-09-21', '10:00'), clockOut: at('2026-09-21', '14:00') });
   assert.equal(r.workedMinutes, 240);
-  assert.equal(r.status, STATUS.EARLY_LEAVE, '240 is exactly 50% of 480, so it is short but not half');
+  assert.equal(
+    r.status,
+    STATUS.EARLY_LEAVE,
+    '240 is exactly 50% of 480, so it is short but not half'
+  );
 });
 
 test('a short Saturday worked in full is PRESENT, never a half day', () => {
@@ -182,7 +190,11 @@ test('a pending leave request does not excuse the day', () => {
 test('a half-day leave halves what is required', () => {
   const s = schedFor(ali, '2026-09-21');
   const leaves = [{ from: '2026-09-21', to: '2026-09-21', halfDay: true, status: 'APPROVED' }];
-  const r = run(s, { clockIn: at('2026-09-21', '14:00'), clockOut: at('2026-09-21', '19:00') }, { leaves });
+  const r = run(
+    s,
+    { clockIn: at('2026-09-21', '14:00'), clockOut: at('2026-09-21', '19:00') },
+    { leaves }
+  );
   assert.equal(r.status, STATUS.ON_LEAVE);
   assert.equal(r.requiredMinutes, 240);
   assert.equal(r.leaveDays, 0.5);
@@ -192,7 +204,11 @@ test('a half-day leave halves what is required', () => {
 test('SHORT_LEAVE: a few approved hours come off the required minutes', () => {
   const s = schedFor(ali, '2026-09-21');
   const leaves = [{ from: '2026-09-21', to: '2026-09-21', hours: 2, status: 'APPROVED' }];
-  const r = run(s, { clockIn: at('2026-09-21', '10:00'), clockOut: at('2026-09-21', '17:00') }, { leaves });
+  const r = run(
+    s,
+    { clockIn: at('2026-09-21', '10:00'), clockOut: at('2026-09-21', '17:00') },
+    { leaves }
+  );
   assert.equal(r.status, STATUS.SHORT_LEAVE);
   assert.equal(r.requiredMinutes, 360);
 });
@@ -277,7 +293,11 @@ test('a flexible shift is never late, only short', () => {
     graceMinutes: 0,
     days: { mon: { working: true, start: '09:00', end: '17:00', breakMinutes: 0 } },
   };
-  const s = getScheduleForDay({ user: { ...ali, shiftId: 'shift-flexi' }, date: '2026-09-21', shifts: [flexi] });
+  const s = getScheduleForDay({
+    user: { ...ali, shiftId: 'shift-flexi' },
+    date: '2026-09-21',
+    shifts: [flexi],
+  });
   const r = run(s, { clockIn: at('2026-09-21', '13:00'), clockOut: at('2026-09-21', '21:00') });
   assert.equal(r.lateByMinutes, 0);
   assert.equal(r.earlyByMinutes, 0);
@@ -288,10 +308,16 @@ test('Dubai lateness is judged in Dubai time, not in Islamabad time', () => {
   const s = getScheduleForDay({ user: mahnoor, date: '2026-09-21', shifts: [STANDARD] });
   assert.equal(s.tz, DXB);
   // 10:20 Dubai is 11:20 in Karachi — late by 5 minutes locally, not by 65.
-  const r = computeDayStatus(s, { clockIn: at('2026-09-21', '10:20', DXB), clockOut: at('2026-09-21', '19:00', DXB) }, [], [], {
-    office: 'DUBAI',
-    now: afterWork('2026-09-21', DXB),
-  });
+  const r = computeDayStatus(
+    s,
+    { clockIn: at('2026-09-21', '10:20', DXB), clockOut: at('2026-09-21', '19:00', DXB) },
+    [],
+    [],
+    {
+      office: 'DUBAI',
+      now: afterWork('2026-09-21', DXB),
+    }
+  );
   assert.equal(r.status, STATUS.LATE);
   assert.equal(r.lateByMinutes, 5);
   assert.equal(r.workedMinutes, 520);
@@ -310,15 +336,29 @@ test('the late-to-deduction rule counts whole groups only', () => {
 test('the auto-close deadline is the shift end plus the configured offset', () => {
   const s = schedFor(ali, '2026-09-21');
   const deadline = autoCloseDeadline(s, { ...DEFAULT_RULES, autoClockOutOffsetHours: 4 });
-  assert.equal(DateTime.fromJSDate(deadline, { zone: KHI }).toFormat('yyyy-MM-dd HH:mm'), '2026-09-21 23:00');
+  assert.equal(
+    DateTime.fromJSDate(deadline, { zone: KHI }).toFormat('yyyy-MM-dd HH:mm'),
+    '2026-09-21 23:00'
+  );
   assert.equal(autoCloseDeadline({ endAt: null }), null);
 });
 
 test('holiday and leave lookups respect office and status', () => {
-  assert.equal(findHoliday([{ date: '2026-09-21', name: 'X', offices: [] }], '2026-09-21', 'DUBAI').name, 'X');
-  assert.equal(findHoliday([{ date: '2026-09-22', name: 'X', offices: [] }], '2026-09-21', 'DUBAI'), null);
-  assert.ok(findLeave([{ from: '2026-09-20', to: '2026-09-23', status: 'APPROVED' }], '2026-09-21'));
-  assert.equal(findLeave([{ from: '2026-09-20', to: '2026-09-23', status: 'REJECTED' }], '2026-09-21'), null);
+  assert.equal(
+    findHoliday([{ date: '2026-09-21', name: 'X', offices: [] }], '2026-09-21', 'DUBAI').name,
+    'X'
+  );
+  assert.equal(
+    findHoliday([{ date: '2026-09-22', name: 'X', offices: [] }], '2026-09-21', 'DUBAI'),
+    null
+  );
+  assert.ok(
+    findLeave([{ from: '2026-09-20', to: '2026-09-23', status: 'APPROVED' }], '2026-09-21')
+  );
+  assert.equal(
+    findLeave([{ from: '2026-09-20', to: '2026-09-23', status: 'REJECTED' }], '2026-09-21'),
+    null
+  );
 });
 
 test('durations format for people, not for machines', () => {

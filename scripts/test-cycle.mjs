@@ -47,13 +47,22 @@ test('start day 26: a date on or after the 26th belongs to the next cycle', () =
 
 test('the boundary day itself starts the new cycle, the day before ends the old one', () => {
   const history = from(26, '2020-01-01');
-  assert.deepEqual(bounds(getCycleForDate('2026-09-25', history, TZ)), ['2026-08-26', '2026-09-25']);
-  assert.deepEqual(bounds(getCycleForDate('2026-09-26', history, TZ)), ['2026-09-26', '2026-10-25']);
+  assert.deepEqual(bounds(getCycleForDate('2026-09-25', history, TZ)), [
+    '2026-08-26',
+    '2026-09-25',
+  ]);
+  assert.deepEqual(bounds(getCycleForDate('2026-09-26', history, TZ)), [
+    '2026-09-26',
+    '2026-10-25',
+  ]);
 });
 
 test('February is handled without slipping a day', () => {
   const history = from(26, '2020-01-01');
-  assert.deepEqual(bounds(getCycleForDate('2026-02-10', history, TZ)), ['2026-01-26', '2026-02-25']);
+  assert.deepEqual(bounds(getCycleForDate('2026-02-10', history, TZ)), [
+    '2026-01-26',
+    '2026-02-25',
+  ]);
   // Start day 28 is the maximum, so it exists in February too.
   const d28 = getCycleForDate('2026-03-01', from(28, '2020-01-01'), TZ);
   assert.deepEqual(bounds(d28), ['2026-02-28', '2026-03-27']);
@@ -77,11 +86,20 @@ test('changing the start day takes effect from the next cycle, never mid-cycle',
     { day: 26, effectiveFrom: '2026-10-01' },
   ];
   // September still runs on the old rule.
-  assert.deepEqual(bounds(getCycleForDate('2026-09-20', history, TZ)), ['2026-09-01', '2026-09-30']);
+  assert.deepEqual(bounds(getCycleForDate('2026-09-20', history, TZ)), [
+    '2026-09-01',
+    '2026-09-30',
+  ]);
   // October is the short transition cycle.
-  assert.deepEqual(bounds(getCycleForDate('2026-10-05', history, TZ)), ['2026-10-01', '2026-10-25']);
+  assert.deepEqual(bounds(getCycleForDate('2026-10-05', history, TZ)), [
+    '2026-10-01',
+    '2026-10-25',
+  ]);
   // From then on the new rule holds.
-  assert.deepEqual(bounds(getCycleForDate('2026-11-10', history, TZ)), ['2026-10-26', '2026-11-25']);
+  assert.deepEqual(bounds(getCycleForDate('2026-11-10', history, TZ)), [
+    '2026-10-26',
+    '2026-11-25',
+  ]);
 });
 
 test('cycles are contiguous across a start-day change: no gaps, no overlaps', () => {
@@ -96,7 +114,10 @@ test('cycles are contiguous across a start-day change: no gaps, no overlaps', ()
     const start = new Date(cycles[i].start);
     const gapMs = start - prevEnd;
     // End is the last millisecond of a day, so the next start is 1ms later.
-    assert.ok(gapMs > 0 && gapMs < 1000, 'gap between ' + cycles[i - 1].endDate + ' and ' + cycles[i].startDate);
+    assert.ok(
+      gapMs > 0 && gapMs < 1000,
+      'gap between ' + cycles[i - 1].endDate + ' and ' + cycles[i].startDate
+    );
   }
   const keys = cycles.map((c) => c.key);
   assert.equal(new Set(keys).size, keys.length, 'cycle keys must be unique');
@@ -104,13 +125,19 @@ test('cycles are contiguous across a start-day change: no gaps, no overlaps', ()
 
 test('dates before the first recorded setting extrapolate backwards', () => {
   const history = [{ day: 26, effectiveFrom: '2026-06-01' }];
-  assert.deepEqual(bounds(getCycleForDate('2024-03-03', history, TZ)), ['2024-02-26', '2024-03-25']);
+  assert.deepEqual(bounds(getCycleForDate('2024-03-03', history, TZ)), [
+    '2024-02-26',
+    '2024-03-25',
+  ]);
 });
 
 test('previous and next cycles chain correctly', () => {
   const history = from(26, '2020-01-01');
   const current = getCycleForDate('2026-09-10', history, TZ);
-  assert.deepEqual(bounds(getPreviousCycle('2026-09-10', history, TZ)), ['2026-07-26', '2026-08-25']);
+  assert.deepEqual(bounds(getPreviousCycle('2026-09-10', history, TZ)), [
+    '2026-07-26',
+    '2026-08-25',
+  ]);
   assert.deepEqual(bounds(getNextCycle('2026-09-10', history, TZ)), ['2026-09-26', '2026-10-25']);
   assert.equal(current.key, '2026-09');
 });

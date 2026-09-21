@@ -41,3 +41,6 @@ yarn-error.log*
 # testing / analysis
 /coverage
 .next/analyze
+
+# workspace local dev env (points at a scratch database)
+.env.local

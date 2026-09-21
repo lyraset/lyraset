@@ -153,7 +153,11 @@ test('an instant after midnight belongs to the night shift that is still running
   assert.equal(resolveWorkDate({ instant: at2am, ...args }), '2026-09-21');
 
   const at8am = DateTime.fromISO('2026-09-22T08:00', { zone: KHI }).toJSDate();
-  assert.equal(resolveWorkDate({ instant: at8am, ...args }), '2026-09-22', 'after the shift ends it is a new day');
+  assert.equal(
+    resolveWorkDate({ instant: at8am, ...args }),
+    '2026-09-22',
+    'after the shift ends it is a new day'
+  );
 });
 
 test('a day shift never pulls an instant back to the previous date', () => {
@@ -211,7 +215,10 @@ test('an office-scoped override skips the other office', () => {
     offices: ['DUBAI'],
     days: { mon: { working: true, start: '10:00', end: '15:00', breakMinutes: 0 } },
   };
-  assert.equal(resolve(mahnoor, '2026-09-21', { specialSchedules: [dubaiOnly] }).requiredMinutes, 300);
+  assert.equal(
+    resolve(mahnoor, '2026-09-21', { specialSchedules: [dubaiOnly] }).requiredMinutes,
+    300
+  );
   assert.equal(resolve(ali, '2026-09-21', { specialSchedules: [dubaiOnly] }).requiredMinutes, 480);
 });
 
@@ -230,7 +237,12 @@ test('an inactive override is ignored', () => {
 
 test('changing a shift assignment never rewrites history', () => {
   const assignments = [
-    { userId: 'u-ali', shiftId: 'shift-standard', effectiveFrom: '2026-01-01', effectiveTo: '2026-09-21' },
+    {
+      userId: 'u-ali',
+      shiftId: 'shift-standard',
+      effectiveFrom: '2026-01-01',
+      effectiveTo: '2026-09-21',
+    },
     { userId: 'u-ali', shiftId: 'shift-night', effectiveFrom: '2026-09-22', effectiveTo: null },
   ];
   const before = resolve({ ...ali, shiftId: null }, '2026-09-21', { assignments });
@@ -243,7 +255,12 @@ test('changing a shift assignment never rewrites history', () => {
 
 test('another employee’s assignment is never picked up', () => {
   const assignments = [
-    { userId: 'someone-else', shiftId: 'shift-night', effectiveFrom: '2026-01-01', effectiveTo: null },
+    {
+      userId: 'someone-else',
+      shiftId: 'shift-night',
+      effectiveFrom: '2026-01-01',
+      effectiveTo: null,
+    },
   ];
   const s = resolve(ali, '2026-09-21', { assignments });
   assert.equal(s.shiftName, 'Standard');
@@ -254,7 +271,10 @@ test('the latest overlapping assignment wins', () => {
     { userId: 'u-ali', shiftId: 'shift-standard', effectiveFrom: '2026-01-01', effectiveTo: null },
     { userId: 'u-ali', shiftId: 'shift-flexi', effectiveFrom: '2026-06-01', effectiveTo: null },
   ];
-  assert.equal(resolve({ ...ali, shiftId: null }, '2026-09-21', { assignments }).shiftName, 'Flexible');
+  assert.equal(
+    resolve({ ...ali, shiftId: null }, '2026-09-21', { assignments }).shiftName,
+    'Flexible'
+  );
 });
 
 test('the same shift resolves to different instants in Dubai and Islamabad', () => {

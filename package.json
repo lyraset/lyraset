@@ -2,7 +2,7 @@
   "name": "lyraset-website",
   "version": "1.0.0",
   "private": true,
-  "description": "LYRASET International Marketing Agency — CMS-driven production website.",
+  "description": "LYRASET International Marketing Agency \u2014 CMS-driven production website.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -15,10 +15,12 @@
     "create-admin": "node --env-file=.env scripts/create-admin.mjs",
     "icons": "node scripts/make-icons.mjs",
     "analyze": "cross-env ANALYZE=true next build",
-    "test": "tsx --test scripts/test-*.mjs",
+    "test": "tsx --test scripts/test-rbac.mjs scripts/test-cycle.mjs scripts/test-schedule.mjs scripts/test-attendance.mjs scripts/test-leave.mjs",
     "test:rbac": "tsx --test scripts/test-rbac.mjs",
     "seed:workspace": "tsx scripts/seed-workspace.mjs",
-    "create-owner": "tsx scripts/create-owner.mjs"
+    "create-owner": "tsx scripts/create-owner.mjs",
+    "test:live": "tsx --test scripts/test-api.mjs scripts/test-flows.mjs",
+    "test:all": "npm run test && npm run test:live"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

@@ -257,7 +257,8 @@
     border-bottom: 1px solid var(--ws-line);
     padding: 0.75rem 1rem 1rem;
   }
-  .ws-sidebar[hidden] {
+  /* Collapsed behind the Menu button; on desktop the attribute is ignored. */
+  .ws-sidebar[data-open='false'] {
     display: none;
   }
   .ws-sidebar .ws-brand-mark {

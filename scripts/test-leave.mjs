@@ -32,8 +32,20 @@ const monToFri = (date) => {
   return wd >= 1 && wd <= 5;
 };
 
-const CASUAL = { name: 'Casual', code: 'CL', paid: true, countsTowardQuota: true, allowHalfDay: true };
-const UNPAID = { name: 'Unpaid', code: 'UP', paid: false, countsTowardQuota: false, allowHalfDay: false };
+const CASUAL = {
+  name: 'Casual',
+  code: 'CL',
+  paid: true,
+  countsTowardQuota: true,
+  allowHalfDay: true,
+};
+const UNPAID = {
+  name: 'Unpaid',
+  code: 'UP',
+  paid: false,
+  countsTowardQuota: false,
+  allowHalfDay: false,
+};
 const SICK = {
   name: 'Sick',
   code: 'SL',
@@ -57,7 +69,10 @@ test('weekends inside a range are free unless the sandwich rule is on', () => {
 
   const sandwich = expandLeaveDays({ ...args, sandwichRule: true });
   assert.equal(sandwich.days, 4, 'the trapped weekend is charged too');
-  assert.equal(sandwich.entries.every((e) => e.counted), true);
+  assert.equal(
+    sandwich.entries.every((e) => e.counted),
+    true
+  );
 });
 
 test('the sandwich rule never charges a weekend at the edge of a request', () => {
@@ -109,13 +124,20 @@ test('a range that is entirely non-working costs nothing', () => {
 });
 
 test('an inverted or invalid range yields no days', () => {
-  assert.equal(expandLeaveDays({ from: '2026-09-28', to: '2026-09-25', isWorkingDay: monToFri }).days, 0);
+  assert.equal(
+    expandLeaveDays({ from: '2026-09-28', to: '2026-09-25', isWorkingDay: monToFri }).days,
+    0
+  );
   assert.equal(expandLeaveDays({ from: 'nope', to: 'nope', isWorkingDay: monToFri }).days, 0);
 });
 
 test('a request spanning two company months is split and charged to each', () => {
   const history = [{ day: 26, effectiveFrom: '2020-01-01' }];
-  const { entries } = expandLeaveDays({ from: '2026-09-24', to: '2026-09-29', isWorkingDay: monToFri });
+  const { entries } = expandLeaveDays({
+    from: '2026-09-24',
+    to: '2026-09-29',
+    isWorkingDay: monToFri,
+  });
   const split = splitLeaveByCycle(entries, history, TZ);
   assert.equal(split.length, 2);
   assert.equal(split[0].cycleKey, '2026-09');
@@ -126,7 +148,11 @@ test('a request spanning two company months is split and charged to each', () =>
 
 test('a request inside one cycle produces a single split', () => {
   const history = [{ day: 1, effectiveFrom: '2020-01-01' }];
-  const { entries } = expandLeaveDays({ from: '2026-09-07', to: '2026-09-09', isWorkingDay: monToFri });
+  const { entries } = expandLeaveDays({
+    from: '2026-09-07',
+    to: '2026-09-09',
+    isWorkingDay: monToFri,
+  });
   const split = splitLeaveByCycle(entries, history, TZ);
   assert.equal(split.length, 1);
   assert.equal(split[0].days, 3);
@@ -141,7 +167,12 @@ test('remaining paid leave subtracts both used and pending days', () => {
 });
 
 test('inside the quota, every day is paid', () => {
-  const r = applyQuota({ days: 2, leaveType: CASUAL, balance: balance(), settings: DEFAULT_LEAVE_SETTINGS });
+  const r = applyQuota({
+    days: 2,
+    leaveType: CASUAL,
+    balance: balance(),
+    settings: DEFAULT_LEAVE_SETTINGS,
+  });
   assert.deepEqual([r.paidDays, r.unpaidDays, r.blocked], [2, 0, false]);
 });
 
@@ -167,19 +198,34 @@ test('a half-day request against half a day of quota is exactly covered', () => 
   const r = applyQuota({ days: 0.5, leaveType: CASUAL, balance: balance({ used: 1.5 }), settings });
   assert.deepEqual([r.paidDays, r.unpaidDays, r.blocked], [0.5, 0, false]);
 
-  const over = applyQuota({ days: 1, leaveType: CASUAL, balance: balance({ used: 1.5 }), settings });
+  const over = applyQuota({
+    days: 1,
+    leaveType: CASUAL,
+    balance: balance({ used: 1.5 }),
+    settings,
+  });
   assert.equal(over.paidDays, 0.5);
   assert.equal(over.unpaidDays, 0.5);
 });
 
 test('an unpaid leave type never touches the paid quota', () => {
-  const r = applyQuota({ days: 5, leaveType: UNPAID, balance: balance({ used: 2 }), settings: DEFAULT_LEAVE_SETTINGS });
+  const r = applyQuota({
+    days: 5,
+    leaveType: UNPAID,
+    balance: balance({ used: 2 }),
+    settings: DEFAULT_LEAVE_SETTINGS,
+  });
   assert.deepEqual([r.paidDays, r.unpaidDays, r.blocked], [0, 5, false]);
 });
 
 test('a paid type that does not count toward quota is unlimited by the quota', () => {
   const type = { ...CASUAL, countsTowardQuota: false };
-  const r = applyQuota({ days: 6, leaveType: type, balance: balance({ used: 2 }), settings: DEFAULT_LEAVE_SETTINGS });
+  const r = applyQuota({
+    days: 6,
+    leaveType: type,
+    balance: balance({ used: 2 }),
+    settings: DEFAULT_LEAVE_SETTINGS,
+  });
   assert.deepEqual([r.paidDays, r.unpaidDays, r.blocked], [6, 0, false]);
 });
 
@@ -190,46 +236,87 @@ test('a per-type monthly limit is applied the same way as the quota', () => {
   assert.equal(r.paidDays, 1, 'the tighter of quota and type limit wins');
   assert.equal(r.unpaidDays, 1);
 
-  const spent = applyQuota({ days: 1, leaveType: type, balance: balance(), settings, usedOfType: 1 });
+  const spent = applyQuota({
+    days: 1,
+    leaveType: type,
+    balance: balance(),
+    settings,
+    usedOfType: 1,
+  });
   assert.equal(spent.paidDays, 0);
   assert.equal(spent.unpaidDays, 1);
 });
 
 test('an unpaid type over its own limit is blocked, since there is nothing to convert to', () => {
   const type = { ...UNPAID, monthlyLimit: 2 };
-  const r = applyQuota({ days: 3, leaveType: type, balance: balance(), settings: DEFAULT_LEAVE_SETTINGS });
+  const r = applyQuota({
+    days: 3,
+    leaveType: type,
+    balance: balance(),
+    settings: DEFAULT_LEAVE_SETTINGS,
+  });
   assert.equal(r.blocked, true);
 });
 
 test('a zero-day request is a no-op, not an error', () => {
-  const r = applyQuota({ days: 0, leaveType: CASUAL, balance: balance(), settings: DEFAULT_LEAVE_SETTINGS });
+  const r = applyQuota({
+    days: 0,
+    leaveType: CASUAL,
+    balance: balance(),
+    settings: DEFAULT_LEAVE_SETTINGS,
+  });
   assert.deepEqual([r.paidDays, r.unpaidDays, r.blocked], [0, 0, false]);
 });
 
 test('LAPSE throws away whatever was left', () => {
-  const settings = { ...DEFAULT_LEAVE_SETTINGS, leaveCarryForward: CARRY_FORWARD.LAPSE, maxCarryForward: 5 };
+  const settings = {
+    ...DEFAULT_LEAVE_SETTINGS,
+    leaveCarryForward: CARRY_FORWARD.LAPSE,
+    maxCarryForward: 5,
+  };
   assert.equal(computeCarryForward({ quota: 2, carriedIn: 0, used: 0 }, settings), 0);
 });
 
 test('CARRY moves the unused balance forward, up to the cap', () => {
-  const settings = { ...DEFAULT_LEAVE_SETTINGS, leaveCarryForward: CARRY_FORWARD.CARRY, maxCarryForward: 1 };
+  const settings = {
+    ...DEFAULT_LEAVE_SETTINGS,
+    leaveCarryForward: CARRY_FORWARD.CARRY,
+    maxCarryForward: 1,
+  };
   assert.equal(computeCarryForward({ quota: 2, carriedIn: 0, used: 0 }, settings), 1, 'capped');
-  assert.equal(computeCarryForward({ quota: 2, carriedIn: 0, used: 1.5 }, settings), 0.5, 'under the cap');
-  assert.equal(computeCarryForward({ quota: 2, carriedIn: 0, used: 2 }, settings), 0, 'nothing left');
-  assert.equal(computeCarryForward({ quota: 2, carriedIn: 0, used: 3 }, settings), 0, 'never negative');
+  assert.equal(
+    computeCarryForward({ quota: 2, carriedIn: 0, used: 1.5 }, settings),
+    0.5,
+    'under the cap'
+  );
+  assert.equal(
+    computeCarryForward({ quota: 2, carriedIn: 0, used: 2 }, settings),
+    0,
+    'nothing left'
+  );
+  assert.equal(
+    computeCarryForward({ quota: 2, carriedIn: 0, used: 3 }, settings),
+    0,
+    'never negative'
+  );
 });
 
 test('carry-in counts toward what can carry forward again', () => {
-  const settings = { ...DEFAULT_LEAVE_SETTINGS, leaveCarryForward: CARRY_FORWARD.CARRY, maxCarryForward: 5 };
+  const settings = {
+    ...DEFAULT_LEAVE_SETTINGS,
+    leaveCarryForward: CARRY_FORWARD.CARRY,
+    maxCarryForward: 5,
+  };
   assert.equal(computeCarryForward({ quota: 2, carriedIn: 1, used: 0 }, settings), 3);
 });
 
 test('leave types enforce their own rules before the quota is even consulted', () => {
   const now = DateTime.fromISO('2026-09-21', { zone: TZ }).toJSDate();
 
-  assert.deepEqual(validateAgainstType({ leaveType: null, days: 1, from: '2026-09-28', now, tz: TZ }), [
-    'Pick a leave type.',
-  ]);
+  assert.deepEqual(
+    validateAgainstType({ leaveType: null, days: 1, from: '2026-09-28', now, tz: TZ }),
+    ['Pick a leave type.']
+  );
 
   const retired = validateAgainstType({
     leaveType: { ...CASUAL, active: false },
@@ -254,7 +341,10 @@ test('leave types enforce their own rules before the quota is even consulted', (
 test('minimum notice is measured in whole days from today', () => {
   const now = DateTime.fromISO('2026-09-21', { zone: TZ }).toJSDate();
   const type = { ...CASUAL, minNoticeDays: 3 };
-  assert.equal(validateAgainstType({ leaveType: type, days: 1, from: '2026-09-24', now, tz: TZ }).length, 0);
+  assert.equal(
+    validateAgainstType({ leaveType: type, days: 1, from: '2026-09-24', now, tz: TZ }).length,
+    0
+  );
   const short = validateAgainstType({ leaveType: type, days: 1, from: '2026-09-22', now, tz: TZ });
   assert.equal(short.length, 1);
   assert.match(short[0], /needs 3 day\(s\) notice/);
@@ -262,14 +352,35 @@ test('minimum notice is measured in whole days from today', () => {
 
 test('a certificate is only required past the configured length', () => {
   const now = DateTime.fromISO('2026-09-21', { zone: TZ }).toJSDate();
-  const within = validateAgainstType({ leaveType: SICK, days: 2, from: '2026-09-22', hasDocument: false, now, tz: TZ });
+  const within = validateAgainstType({
+    leaveType: SICK,
+    days: 2,
+    from: '2026-09-22',
+    hasDocument: false,
+    now,
+    tz: TZ,
+  });
   assert.equal(within.length, 0, 'two days needs nothing');
 
-  const longer = validateAgainstType({ leaveType: SICK, days: 3, from: '2026-09-22', hasDocument: false, now, tz: TZ });
+  const longer = validateAgainstType({
+    leaveType: SICK,
+    days: 3,
+    from: '2026-09-22',
+    hasDocument: false,
+    now,
+    tz: TZ,
+  });
   assert.equal(longer.length, 1);
   assert.match(longer[0], /Attach a certificate/);
 
-  const attached = validateAgainstType({ leaveType: SICK, days: 3, from: '2026-09-22', hasDocument: true, now, tz: TZ });
+  const attached = validateAgainstType({
+    leaveType: SICK,
+    days: 3,
+    from: '2026-09-22',
+    hasDocument: true,
+    now,
+    tz: TZ,
+  });
   assert.equal(attached.length, 0);
 });
 
