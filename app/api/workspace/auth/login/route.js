@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
-import { connectDB } from "@/lib/workspace/db";
-import User from "@/models/workspace/User";
-import { verifyPassword, getPlaceholderHash } from "@/lib/workspace/passwords";
-import { SESSION_COOKIE, createSessionToken, sessionCookieOptions } from "@/lib/workspace/session";
-import { logAudit } from "@/lib/workspace/audit";
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { connectDB } from '@/lib/workspace/db';
+import User from '@/models/workspace/User';
+import { verifyPassword, getPlaceholderHash } from '@/lib/workspace/passwords';
+import { SESSION_COOKIE, createSessionToken, sessionCookieOptions } from '@/lib/workspace/session';
+import { logAudit } from '@/lib/workspace/audit';
 
 const MAX_ATTEMPTS = 5;
 const LOCK_MINUTES = 15;
@@ -16,38 +16,56 @@ const LoginSchema = z.object({
 });
 
 function safeRedirect(next) {
-  if (typeof next !== "string") return "/workspace";
-  if (!next.startsWith("/workspace") || next.startsWith("//") || next.startsWith("/workspace/login")) {
-    return "/workspace";
+  if (typeof next !== 'string') return '/workspace';
+  if (
+    !next.startsWith('/workspace') ||
+    next.startsWith('//') ||
+    next.startsWith('/workspace/login')
+  ) {
+    return '/workspace';
   }
   return next;
 }
 
-const INVALID = { error: "Employee ID/email or password is incorrect." };
+const INVALID = { error: 'Employee ID/email or password is incorrect.' };
 
 export async function POST(req) {
   const parsed = LoginSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json({ error: "Enter your Employee ID or email and password." }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Enter your Employee ID or email and password.' },
+      { status: 400 }
+    );
   }
   const { identifier, password, next } = parsed.data;
 
   await connectDB();
-  const query = identifier.includes("@")
+  const query = identifier.includes('@')
     ? { email: identifier.toLowerCase() }
     : { employeeId: identifier.toUpperCase() };
-  const user = await User.findOne(query).select("+passwordHash +failedLoginAttempts +lockUntil");
+  const user = await User.findOne(query).select('+passwordHash +failedLoginAttempts +lockUntil');
 
   if (!user) {
     await verifyPassword(password, await getPlaceholderHash()); // equalise timing
-    await logAudit({ action: "auth.login_failed", meta: { identifier, reason: "unknown_account" }, req });
+    await logAudit({
+      action: 'auth.login_failed',
+      meta: { identifier, reason: 'unknown_account' },
+      req,
+    });
     return NextResponse.json(INVALID, { status: 401 });
   }
 
   if (user.lockUntil && user.lockUntil > new Date()) {
-    await logAudit({ actorId: user._id, action: "auth.login_blocked", meta: { reason: "locked" }, req });
+    await logAudit({
+      actorId: user._id,
+      action: 'auth.login_blocked',
+      meta: { reason: 'locked' },
+      req,
+    });
     return NextResponse.json(
-      { error: `Too many failed attempts. Try again in ${LOCK_MINUTES} minutes or ask the Owner to unlock your account.` },
+      {
+        error: `Too many failed attempts. Try again in ${LOCK_MINUTES} minutes or ask the Owner to unlock your account.`,
+      },
       { status: 423 }
     );
   }
@@ -59,21 +77,36 @@ export async function POST(req) {
       user._id,
       { $inc: { failedLoginAttempts: 1 } },
       { new: true }
-    ).select("+failedLoginAttempts");
+    ).select('+failedLoginAttempts');
     if (updated.failedLoginAttempts >= MAX_ATTEMPTS) {
       await User.updateOne(
         { _id: user._id },
-        { $set: { lockUntil: new Date(Date.now() + LOCK_MINUTES * 60_000), failedLoginAttempts: 0 } }
+        {
+          $set: { lockUntil: new Date(Date.now() + LOCK_MINUTES * 60_000), failedLoginAttempts: 0 },
+        }
       );
-      await logAudit({ actorId: user._id, action: "auth.account_locked", req });
+      await logAudit({ actorId: user._id, action: 'auth.account_locked', req });
     }
-    await logAudit({ actorId: user._id, action: "auth.login_failed", meta: { reason: "bad_password" }, req });
+    await logAudit({
+      actorId: user._id,
+      action: 'auth.login_failed',
+      meta: { reason: 'bad_password' },
+      req,
+    });
     return NextResponse.json(INVALID, { status: 401 });
   }
 
-  if (user.status !== "ACTIVE") {
-    await logAudit({ actorId: user._id, action: "auth.login_blocked", meta: { reason: "inactive" }, req });
-    return NextResponse.json({ error: "This account is deactivated. Contact the Owner." }, { status: 403 });
+  if (user.status !== 'ACTIVE') {
+    await logAudit({
+      actorId: user._id,
+      action: 'auth.login_blocked',
+      meta: { reason: 'inactive' },
+      req,
+    });
+    return NextResponse.json(
+      { error: 'This account is deactivated. Contact the Owner.' },
+      { status: 403 }
+    );
   }
 
   await User.updateOne(
@@ -88,6 +121,6 @@ export async function POST(req) {
     redirectTo: safeRedirect(next),
   });
   res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions());
-  await logAudit({ actorId: user._id, action: "auth.login", req });
+  await logAudit({ actorId: user._id, action: 'auth.login', req });
   return res;
 }

@@ -1,5 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "regions": ["bom1"]
+  "regions": ["bom1"],
+  "crons": [
+    { "path": "/api/workspace/cron/auto-close", "schedule": "0 20 * * *" },
+    { "path": "/api/workspace/cron/mark-absent", "schedule": "30 20 * * *" },
+    { "path": "/api/workspace/cron/cycle-rollover", "schedule": "0 21 * * *" },
+    { "path": "/api/workspace/cron/daily-summary", "schedule": "0 3 * * *" },
+    { "path": "/api/workspace/cron/reminders", "schedule": "30 4 * * *" }
+  ]
 }

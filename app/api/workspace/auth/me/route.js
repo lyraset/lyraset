@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { requireApiUser, handleApiError } from "@/lib/workspace/auth";
+import { NextResponse } from 'next/server';
+import { requireApiUser, handleApiError } from '@/lib/workspace/auth';
 
 export async function GET() {
   try {
