@@ -186,37 +186,74 @@ clock-out fails.
 
 ---
 
-## Scheduled jobs
+## Scheduled jobs (optional)
 
-Five routes under `/api/workspace/cron/*`, each authenticated by
-`Authorization: Bearer ${CRON_SECRET}` and nothing else. Every one is
-idempotent and safe to re-run.
+**The portal is correct without any scheduler.** `vercel.json` declares no cron
+jobs, so it deploys on a free Vercel account with nothing to configure.
 
-| Job              | What it does                                             |
-| ---------------- | -------------------------------------------------------- |
-| `auto-close`     | Closes sessions open past shift end + the Owner's offset |
-| `mark-absent`    | Marks yesterday absent where someone should have worked  |
-| `cycle-rollover` | Carries forward or lapses leave, opens the next cycle    |
-| `reminders`      | Clock-in and clock-out reminders                         |
-| `daily-summary`  | Yesterday's summary for leadership, probation alerts     |
+That works because the things that matter are computed when they are read, not
+written by a nightly job:
 
-`vercel.json` schedules each once a day, which is all the Hobby plan allows.
+- **Absences.** A past working day with no clock-in and no approved leave reads
+  as `ABSENT` wherever it is shown — the team sheet, the drill-down, every
+  report. The status engine decides it from the schedule and the record; the
+  job only writes it down.
+- **Auto clock-out.** A session left open is closed the moment anyone loads the
+  dashboard or clocks in, at the shift end plus the Owner's offset — not at the
+  time it was noticed.
+- **Leave carry-forward.** If a cycle was never rolled, the next cycle's
+  carry-in is computed from it on demand, using the same function the job uses.
 
-**On the Pro plan, tighten these:**
+What you do lose without a scheduler is the things that are inherently timed,
+because nothing is there to fire them:
 
-```jsonc
-{ "path": "/api/workspace/cron/reminders",  "schedule": "*/15 * * * *" },
-{ "path": "/api/workspace/cron/auto-close", "schedule": "0 * * * *" }
+- clock-in and clock-out reminders
+- the morning attendance summary for leadership
+- the probation-ending alert to the Owner
+
+Everything else still appears under the bell when it happens — a leave decision
+notifies the employee at the moment it is decided, not on a schedule.
+
+### Turning them on later
+
+The routes exist and are secured; they just are not scheduled. Set `CRON_SECRET`
+and add one entry — the free plan allows two:
+
+```json
+"crons": [{ "path": "/api/workspace/cron/daily", "schedule": "0 20 * * *" }]
 ```
 
-Reminders only fire within an hour of becoming due, so at a daily cadence they
-catch only the shifts that happen to fall near that hour. Every notification is
-deduplicated, so running them every fifteen minutes sends nothing twice.
+`0 20 * * *` is 01:00 in Islamabad and 00:00 in Dubai, after both offices have
+finished and the auto-close offset has passed. The `daily` route runs every job
+in sequence — sessions are closed before absence is judged — keeps going if one
+fails, and returns 207 when a run was partial.
 
-The auto-close does not depend on its cron. It also runs lazily whenever anyone
-loads the dashboard or clocks in, which is what keeps a Hobby deployment
-correct: someone who forgot to clock out yesterday has their session closed the
-moment they open the portal today, whether or not the job has run.
+Anything that can make an authenticated request works just as well: an external
+uptime pinger, a GitHub Action, a cron on any machine you own.
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" https://www.lyraset.com/api/workspace/cron/daily
+```
+
+On a paid plan the individual routes can be scheduled separately and tightened:
+
+```json
+"crons": [
+  { "path": "/api/workspace/cron/auto-close",     "schedule": "0 * * * *" },
+  { "path": "/api/workspace/cron/reminders",      "schedule": "*/15 * * * *" },
+  { "path": "/api/workspace/cron/mark-absent",    "schedule": "0 20 * * *" },
+  { "path": "/api/workspace/cron/cycle-rollover", "schedule": "30 20 * * *" },
+  { "path": "/api/workspace/cron/daily-summary",  "schedule": "0 3 * * *" }
+]
+```
+
+Reminders are the one job that really wants a tight schedule: they only fire
+within an hour of becoming due, so once a day they catch only the shifts near
+that hour. Every notification is deduplicated, so running it every fifteen
+minutes sends nothing twice.
+
+Without `CRON_SECRET` set, every cron route returns 503 and refuses to run —
+they fail closed, so leaving it unset is safe.
 
 ---
 
