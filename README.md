@@ -10,6 +10,11 @@ is stored in the database and editable from `/admin` without touching code.
 > renders from bundled seed content so you can develop immediately. Point it at
 > an Atlas cluster and run the seed script to make everything editable.
 
+The repository also contains the internal attendance and HR portal at
+`/workspace` — clock in and out, end-of-day reports, leave, approvals, payroll
+close. It shares this database and Cloudinary account but is otherwise separate:
+no workspace code reaches a public page bundle. See **[WORKSPACE.md](WORKSPACE.md)**.
+
 ---
 
 ## Tech stack
@@ -75,6 +80,17 @@ the steps below.
 | `npm run lint`     | ESLint                                        |
 | `npm run format`   | Prettier                                      |
 | `npm run analyze`  | Bundle analysis (`@next/bundle-analyzer`)     |
+
+Workspace portal (see [WORKSPACE.md](WORKSPACE.md)):
+
+| Command                   | Purpose                                              |
+| ------------------------- | ---------------------------------------------------- |
+| `npm test`                | Unit tests for RBAC and the calculation modules       |
+| `npm run test:live`       | API, page and flow tests against a running server     |
+| `npm run test:all`        | Both                                                  |
+| `npm run seed:workspace`  | Demo accounts and data (needs `WORKSPACE_ALLOW_SEED`) |
+| `npm run create-owner`    | Bootstrap the one real Owner account                  |
+| `npm run icons:workspace` | Regenerate the portal's PWA icons                     |
 
 ---
 

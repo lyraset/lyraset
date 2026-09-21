@@ -19,8 +19,9 @@
     "test:rbac": "tsx --test scripts/test-rbac.mjs",
     "seed:workspace": "tsx scripts/seed-workspace.mjs",
     "create-owner": "tsx scripts/create-owner.mjs",
-    "test:live": "tsx --test scripts/test-api.mjs scripts/test-flows.mjs",
-    "test:all": "npm run test && npm run test:live"
+    "test:live": "tsx --test scripts/test-api.mjs scripts/test-flows.mjs scripts/test-rules.mjs",
+    "test:all": "npm run test && npm run test:live",
+    "icons:workspace": "tsx scripts/make-workspace-icons.mjs"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

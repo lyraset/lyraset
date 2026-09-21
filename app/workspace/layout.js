@@ -12,6 +12,13 @@ import '@/styles/workspace/components.css';
 export const metadata = {
   title: { default: 'Workspace', template: '%s | LYRASET Workspace' },
   robots: { index: false, follow: false, nocache: true },
+  // Installable on a phone, which is how most people will clock in.
+  manifest: '/workspace/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: 'Workspace',
+    statusBarStyle: 'black-translucent',
+  },
 };
 
 export const viewport = {

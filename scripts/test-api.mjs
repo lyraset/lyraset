@@ -407,3 +407,62 @@ describe('unlisted workspace pages are denied by default', () => {
     }
   );
 });
+
+/**
+ * The page-level matrix, which is what the acceptance criteria describe:
+ * an employee opening /workspace/team should be redirected with a notice, not
+ * shown a broken page. 200 means the page rendered; 307 means it bounced.
+ */
+const PAGE_MATRIX = [
+  ['/workspace', { employee: 200, md: 200, owner: 200, ceo: 200 }],
+  ['/workspace/profile', { employee: 200, md: 200, owner: 200, ceo: 200 }],
+  ['/workspace/attendance', { employee: 200, md: 200, owner: 200, ceo: 307 }],
+  ['/workspace/eod', { employee: 200, md: 200, owner: 200, ceo: 307 }],
+  ['/workspace/leave', { employee: 200, md: 200, owner: 200, ceo: 307 }],
+  ['/workspace/requests', { employee: 200, md: 200, owner: 200, ceo: 307 }],
+  ['/workspace/team', { employee: 307, md: 200, owner: 200, ceo: 200 }],
+  ['/workspace/team/eod', { employee: 307, md: 200, owner: 200, ceo: 200 }],
+  ['/workspace/leave-calendar', { employee: 307, md: 200, owner: 200, ceo: 200 }],
+  ['/workspace/reports', { employee: 307, md: 200, owner: 200, ceo: 200 }],
+  ['/workspace/approvals', { employee: 307, md: 307, owner: 200, ceo: 200 }],
+  ['/workspace/audit', { employee: 307, md: 307, owner: 200, ceo: 200 }],
+  ['/workspace/employees', { employee: 307, md: 307, owner: 200, ceo: 307 }],
+  ['/workspace/settings', { employee: 307, md: 307, owner: 200, ceo: 307 }],
+  ['/workspace/settings/company', { employee: 307, md: 307, owner: 200, ceo: 307 }],
+  ['/workspace/settings/shifts', { employee: 307, md: 307, owner: 200, ceo: 307 }],
+  ['/workspace/payroll-close', { employee: 307, md: 307, owner: 200, ceo: 307 }],
+];
+
+describe('every page renders for the roles that may open it', () => {
+  for (const [path, expected] of PAGE_MATRIX) {
+    test(path, { skip: skipUnlessUp() }, async () => {
+      for (const [role, status] of Object.entries(expected)) {
+        const res = await call(role, path);
+        assert.equal(res.status, status, role + ' -> ' + path);
+        if (status === 307) {
+          // A denied page bounces to the dashboard with a notice, never to a 404.
+          assert.match(res.headers.get('location') ?? '', /denied=1/, role + ' -> ' + path);
+        }
+      }
+    });
+  }
+});
+
+describe('signed-out visitors are sent to the login page', () => {
+  test(
+    'a workspace page redirects to login with a return path',
+    { skip: skipUnlessUp() },
+    async () => {
+      const res = await call(null, '/workspace/team');
+      assert.equal(res.status, 307);
+      const location = res.headers.get('location') ?? '';
+      assert.match(location, /\/workspace\/login/);
+      assert.match(location, /next=%2Fworkspace%2Fteam/);
+    }
+  );
+
+  test('the login page itself is public', { skip: skipUnlessUp() }, async () => {
+    const res = await call(null, '/workspace/login');
+    assert.equal(res.status, 200);
+  });
+});
