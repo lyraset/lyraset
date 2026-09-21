@@ -41,7 +41,6 @@ import { getScheduleForDay } from '../lib/workspace/calc/schedule.js';
 import { computeDayStatus, STATUS } from '../lib/workspace/calc/attendance.js';
 import { getCycleForDate } from '../lib/workspace/calc/cycle.js';
 
-dotenv.config({ path: '.env.local' });
 dotenv.config();
 
 // ---------------------------------------------------------------- accounts --
@@ -423,7 +422,7 @@ async function seedHistory({ users, shift, leaveTypes, projects, days = 30 }) {
 
       const roll = random();
       // A realistic spread: mostly on time, some lateness, the odd absence.
-      if (roll > 0.94) continue; // absent, left for the cron to mark
+      if (roll > 0.94) continue; // absent: no record at all, which is what an absence looks like
 
       const lateMinutes = roll > 0.78 ? Math.floor(random() * 45) + 16 : Math.floor(random() * 12);
       const clockIn = DateTime.fromJSDate(schedule.startAt, { zone: tz }).plus({

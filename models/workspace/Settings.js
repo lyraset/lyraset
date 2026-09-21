@@ -53,13 +53,9 @@ const WorkspaceSettingsSchema = new mongoose.Schema(
 
     // ---- Notification toggles ----
     notifications: {
-      clockInReminder: { type: Boolean, default: true },
-      clockOutReminder: { type: Boolean, default: true },
       autoClockOutNotice: { type: Boolean, default: true },
       requestDecision: { type: Boolean, default: true },
       approverPending: { type: Boolean, default: true },
-      leadershipDailySummary: { type: Boolean, default: true },
-      probationEndingAlert: { type: Boolean, default: true },
       email: { type: Boolean, default: false },
     },
 

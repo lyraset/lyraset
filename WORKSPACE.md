@@ -1,9 +1,13 @@
 # LYRASET Workspace
 
-The internal attendance and HR portal at `/workspace`. It shares this
-repository, its database connection and its Cloudinary account with the public
-site and the admin CMS, but nothing else: no workspace code is imported by a
-public page, and its styles load only inside the portal.
+The internal attendance portal at `/workspace`. It is part of this website,
+not a separate application: one repository, one build, one `.env`, one database
+connection, one Cloudinary account, one deployment.
+
+The one thing that is kept apart is the browser bundle. A visitor reading a
+case study never downloads the portal's JavaScript or stylesheets, because
+none of it is imported by a public page — that is a page-weight decision, not a
+separation of the codebase.
 
 Written for: whoever maintains this repository next.
 
@@ -37,8 +41,8 @@ approves their own.
 ```bash
 npm install
 
-# Fill in the workspace variables — see .env.example for what each one is for.
-cp .env.example .env.local
+# Add the two workspace variables to the site's existing .env — see
+# .env.example for what each one is. There is no separate portal env file.
 
 npm run dev
 ```
@@ -47,8 +51,10 @@ Then create either demo data or a real Owner.
 
 ### Demo data (development)
 
-Point `MONGODB_URI` at a scratch database first. The passwords below are
-published in the seed script.
+This writes to whatever database `MONGODB_URI` in `.env` points at — the same
+one the public site uses. Every demo record is marked `isSeedData`, so
+`--clean` removes exactly those and nothing else. The passwords below are
+published in the seed script, so remove them before real staff use the portal.
 
 ```bash
 # Windows PowerShell
@@ -99,7 +105,7 @@ npm run create-owner -- --reset
 
 ```bash
 npm test          # 106 unit tests, no database or server needed
-npm run test:live # 93 more against a running, seeded server
+npm run test:live # 84 more against a running, seeded server
 npm run test:all  # both
 ```
 
@@ -110,13 +116,25 @@ date-range overrides, the grace window, paid versus unpaid breaks, the sandwich
 rule, and leave that spans two cycles.
 
 `npm run test:live` needs `npm run dev` and a seeded database in another
-terminal. It runs the files serially: they share one database and the same demo
-accounts, so file-level parallelism would let one suite delete a fixture
-another is mid-way through using. It signs in as each role and calls every protected endpoint and page,
+terminal. It signs in as each role and calls every protected endpoint and page,
 asserting the exact status the permission table says it should get, then walks
 the real flows: clock in, break, EOD and clock-out, leave against a quota,
-payroll locking, password reset, auto clock-out. It skips itself if no server
-is reachable, so it never fails for the wrong reason.
+payroll locking, password reset, a forgotten clock-out being closed. It skips
+itself if no server is reachable.
+
+**It writes to the database** — it clocks demo accounts in and out, resets a
+demo password and changes settings briefly. Run it against a copy, not the live
+database. The simplest way, without a second env file, is to override the
+connection for that one shell session:
+
+```powershell
+$env:MONGODB_URI = "mongodb+srv://.../lyraset_test?..."   # a scratch database
+npm run dev          # in one terminal
+npm run test:live    # in another, same override set
+```
+
+A variable set in the shell wins over `.env`, and disappears when the terminal
+closes. The files run one at a time because they share the same demo accounts.
 
 ---
 
@@ -147,8 +165,8 @@ Everything that decides something — was this late, how many days does this
 leave cost, which cycle is this in — is a pure function that takes plain data
 and returns plain data. The services load the data and write the results. That
 is why the rules can be tested exhaustively without a database, and why the
-dashboard, the nightly cron and the payroll export cannot disagree about
-whether a day was late: they all call the same function.
+dashboard, the team sheet and the payroll export cannot disagree about whether
+a day was late: they all call the same function.
 
 ### Four rules that hold everywhere
 
@@ -188,87 +206,44 @@ clock-out fails.
 
 ---
 
-## Scheduled jobs (optional)
+## Nothing runs on a schedule
 
-**The portal is correct without any scheduler.** `vercel.json` declares no cron
-jobs, so it deploys on a free Vercel account with nothing to configure.
+There are no cron jobs, no scheduled routes and nothing on a timer. The portal
+deploys on a free Vercel account with nothing to configure, and there is no
+background job that can quietly stop working without anyone noticing.
 
-That works because the things that matter are computed when they are read, not
-written by a nightly job:
+That works because everything a nightly job would have written is worked out
+when it is read:
 
 - **Absences.** A past working day with no clock-in and no approved leave reads
-  as `ABSENT` wherever it is shown — the team sheet, the drill-down, every
-  report. The status engine decides it from the schedule and the record; the
-  job only writes it down.
-- **Auto clock-out.** A session left open is closed the moment anyone loads the
-  dashboard or clocks in, at the shift end plus the Owner's offset — not at the
-  time it was noticed.
-- **Leave carry-forward.** If a cycle was never rolled, the next cycle's
-  carry-in is computed from it on demand, using the same function the job uses.
+  as `ABSENT` wherever it appears — the team sheet, the drill-down, the
+  absentees report. The status engine derives it from the shift and the record.
+- **Sessions left open.** If someone forgets to clock out, the next time anyone
+  loads the dashboard or clocks in, that session is closed at the shift end
+  plus the Owner's offset — not at the time it happened to be noticed. This is
+  what keeps the saved shift length honest: without it, one forgotten clock-out
+  would record a twenty-hour day.
+- **Leave carry-forward.** The next cycle's carry-in is computed from the
+  previous one on demand.
 
-What you do lose without a scheduler is the things that are inherently timed,
-because nothing is there to fire them:
-
-- clock-in and clock-out reminders
-- the morning attendance summary for leadership
-- the probation-ending alert to the Owner
-
-Everything else still appears under the bell when it happens — a leave decision
-notifies the employee at the moment it is decided, not on a schedule.
-
-### Turning them on later
-
-The routes exist and are secured; they just are not scheduled. Set `CRON_SECRET`
-and add one entry — the free plan allows two:
-
-```json
-"crons": [{ "path": "/api/workspace/cron/daily", "schedule": "0 20 * * *" }]
-```
-
-`0 20 * * *` is 01:00 in Islamabad and 00:00 in Dubai, after both offices have
-finished and the auto-close offset has passed. The `daily` route runs every job
-in sequence — sessions are closed before absence is judged — keeps going if one
-fails, and returns 207 when a run was partial.
-
-Anything that can make an authenticated request works just as well: an external
-uptime pinger, a GitHub Action, a cron on any machine you own.
-
-```bash
-curl -H "Authorization: Bearer $CRON_SECRET" https://www.lyraset.com/api/workspace/cron/daily
-```
-
-On a paid plan the individual routes can be scheduled separately and tightened:
-
-```json
-"crons": [
-  { "path": "/api/workspace/cron/auto-close",     "schedule": "0 * * * *" },
-  { "path": "/api/workspace/cron/reminders",      "schedule": "*/15 * * * *" },
-  { "path": "/api/workspace/cron/mark-absent",    "schedule": "0 20 * * *" },
-  { "path": "/api/workspace/cron/cycle-rollover", "schedule": "30 20 * * *" },
-  { "path": "/api/workspace/cron/daily-summary",  "schedule": "0 3 * * *" }
-]
-```
-
-Reminders are the one job that really wants a tight schedule: they only fire
-within an hour of becoming due, so once a day they catch only the shifts near
-that hour. Every notification is deduplicated, so running it every fifteen
-minutes sends nothing twice.
-
-Without `CRON_SECRET` set, every cron route returns 503 and refuses to run —
-they fail closed, so leaving it unset is safe.
+Notifications are raised by things people do — a leave decision reaches the
+employee the moment it is decided — so they need no scheduler either.
 
 ---
 
 ## Environment variables
 
-Documented in full in `.env.example`. The workspace-specific ones:
+**One `.env` for the whole site.** The portal is part of this website, not a
+separate app: same repository, same build, same database connection, same
+Cloudinary account, same `.env`. There is no portal-specific env file.
+
+Documented in full in `.env.example`. The two variables the portal adds:
 
 | Variable               | Required                | What it does                                                            |
 | ---------------------- | ----------------------- | ----------------------------------------------------------------------- |
 | `MONGODB_URI`          | yes                     | Shared with the CMS; the workspace adds `workspace_*` collections       |
 | `WORKSPACE_JWT_SECRET` | yes                     | Signs the session cookie. 32 chars minimum, 48 random bytes recommended |
 | `WORKSPACE_FIELD_KEY`  | if storing national IDs | AES-256-GCM key. Rotating it makes stored values unreadable             |
-| `CRON_SECRET`          | yes in production       | Without it the cron routes refuse everything rather than failing open   |
 | `CLOUDINARY_*`         | for file uploads        | Shared with the public site                                             |
 | `RESEND_API_KEY`       | optional                | Without it, notifications still appear under the bell                   |
 | `WORKSPACE_EMAIL_FROM` | with email              | A verified Resend sender                                                |

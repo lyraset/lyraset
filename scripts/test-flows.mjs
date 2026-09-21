@@ -19,7 +19,6 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import { DateTime } from 'luxon';
 
-dotenv.config({ path: '.env.local' });
 dotenv.config();
 
 const BASE = process.env.WORKSPACE_TEST_URL || 'http://localhost:3000';

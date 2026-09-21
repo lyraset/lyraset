@@ -21,7 +21,6 @@ import dotenv from 'dotenv';
 import { DateTime } from 'luxon';
 import { getScheduleForDay } from '../lib/workspace/calc/schedule.js';
 
-dotenv.config({ path: '.env.local' });
 dotenv.config();
 
 const BASE = process.env.WORKSPACE_TEST_URL || 'http://localhost:3000';
@@ -60,97 +59,6 @@ const skip = () =>
 async function findUser(employeeId) {
   return mongoose.connection.collection('workspace_users').findOne({ employeeId });
 }
-
-describe('auto clock-out closes a session that was left open', () => {
-  test(
-    'the day is flagged, the cron is idempotent, and a late EOD still lands',
-    { skip: skip() },
-    async () => {
-      const secret = process.env.CRON_SECRET;
-      if (!secret || !db) return;
-
-      const user = await findUser('DEMO-101');
-      const tz = user.timezone || 'Asia/Karachi';
-      // Two days back, so the shift has certainly ended and the offset has passed.
-      const workDate = DateTime.now().setZone(tz).minus({ days: 2 }).toISODate();
-
-      const attendance = mongoose.connection.collection('workspace_attendance');
-      const eods = mongoose.connection.collection('workspace_eods');
-      await attendance.deleteMany({ userId: user._id, workDate });
-      await eods.deleteMany({ userId: user._id, workDate });
-
-      // An open session: clocked in, never clocked out.
-      await attendance.insertOne({
-        userId: user._id,
-        workDate,
-        office: user.office,
-        timezone: tz,
-        clockIn: DateTime.fromISO(workDate + 'T10:05', { zone: tz }).toJSDate(),
-        clockOut: null,
-        breaks: [],
-        status: 'PRESENT',
-        flags: [],
-        autoClosed: false,
-        eodMissing: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-
-      const cron = await fetchWithRetry(BASE + '/api/workspace/cron/auto-close', {
-        headers: { authorization: 'Bearer ' + secret },
-      });
-      assert.equal(cron.status, 200);
-
-      const closed = await attendance.findOne({ userId: user._id, workDate });
-      assert.ok(closed.clockOut, 'the session was closed');
-      assert.equal(closed.autoClosed, true, 'and flagged as automatic');
-      assert.equal(closed.status, 'MISSING_CLOCK_OUT');
-      assert.equal(closed.eodMissing, true, 'the report is still owed');
-
-      // Closed at the deadline, not at "now" — the employee did not work the
-      // hours between the shift ending and the cron noticing.
-      assert.equal(
-        DateTime.fromJSDate(closed.clockOut, { zone: tz }).toISODate(),
-        workDate,
-        'closed on the same work date'
-      );
-
-      // Re-running the job changes nothing: it has to be safe to fire late.
-      const rerun = await fetchWithRetry(BASE + '/api/workspace/cron/auto-close', {
-        headers: { authorization: 'Bearer ' + secret },
-      });
-      assert.equal(rerun.status, 200);
-      const after = await attendance.findOne({ userId: user._id, workDate });
-      assert.equal(
-        after.clockOut.getTime(),
-        closed.clockOut.getTime(),
-        'a second run does not move the clock-out'
-      );
-
-      // The employee can still account for the day.
-      const late = await call('employee', '/api/workspace/eod', {
-        method: 'POST',
-        body: {
-          workDate,
-          tasks: [
-            {
-              title: 'Catching up the record',
-              description: 'Submitting the report for a day that was closed automatically.',
-            },
-          ],
-        },
-      });
-      assert.equal(late.status, 201, JSON.stringify(late.data));
-      assert.equal(late.data.eod.lateSubmission, true, 'and it is marked as a late submission');
-
-      const settled = await attendance.findOne({ userId: user._id, workDate });
-      assert.equal(settled.eodMissing, false, 'the day no longer owes a report');
-
-      await attendance.deleteMany({ userId: user._id, workDate });
-      await eods.deleteMany({ userId: user._id, workDate });
-    }
-  );
-});
 
 describe('a company month start day of 26 runs from the 26th to the 25th', () => {
   test('dashboards, history and reports all use that window', { skip: skip() }, async () => {
@@ -255,32 +163,6 @@ describe('the seeded shift matches the spec', () => {
       480
     );
   });
-});
-
-describe('absence marking only touches days that deserve it', () => {
-  test(
-    'a working day with no clock-in becomes absent; a weekend does not',
-    { skip: skip() },
-    async () => {
-      const secret = process.env.CRON_SECRET;
-      if (!secret || !db) return;
-
-      const res = await fetchWithRetry(BASE + '/api/workspace/cron/mark-absent', {
-        headers: { authorization: 'Bearer ' + secret },
-      });
-      assert.equal(res.status, 200);
-      const body = await res.json();
-      assert.equal(body.ok, true);
-      assert.equal(typeof body.marked, 'number');
-
-      // Nobody exempt from attendance is ever marked absent.
-      const ceo = await findUser('DEMO-002');
-      const marked = await mongoose.connection
-        .collection('workspace_attendance')
-        .countDocuments({ userId: ceo._id, status: 'ABSENT' });
-      assert.equal(marked, 0, 'the CEO is never marked absent');
-    }
-  );
 });
 
 after(async () => {

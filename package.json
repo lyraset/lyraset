@@ -19,7 +19,7 @@
     "test:rbac": "tsx --test scripts/test-rbac.mjs",
     "seed:workspace": "tsx scripts/seed-workspace.mjs",
     "create-owner": "tsx scripts/create-owner.mjs",
-    "test:live": "tsx --test --test-concurrency=1 scripts/test-api.mjs scripts/test-flows.mjs scripts/test-rules.mjs scripts/test-no-cron.mjs",
+    "test:live": "tsx --test --test-concurrency=1 scripts/test-core.mjs scripts/test-api.mjs scripts/test-flows.mjs scripts/test-rules.mjs scripts/test-no-cron.mjs",
     "test:all": "npm run test && npm run test:live",
     "icons:workspace": "tsx scripts/make-workspace-icons.mjs"
   },

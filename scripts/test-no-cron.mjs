@@ -1,14 +1,13 @@
 /**
- * The portal must be correct with no scheduler at all.
+ * The portal has no scheduled jobs at all — no cron routes, nothing on a timer.
  *
  *   npm run dev
  *   npx tsx --test scripts/test-no-cron.mjs
  *
- * vercel.json declares no cron jobs so the site deploys on a free account with
- * nothing to configure. That is only defensible if the things a nightly job
- * would have written are computed when they are read instead. These tests hold
- * that line: absences appear without the job having run, a stale session is
- * closed by a page load, and leave carries forward from a cycle nobody rolled.
+ * That is only safe because everything a nightly job would have written is
+ * computed when it is read instead. These tests hold that line: absences appear
+ * with nothing having run, a session left open is closed by the next page load
+ * so the saved shift length stays honest, and leave carries forward on demand.
  */
 import { test, describe, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -17,7 +16,6 @@ import dotenv from 'dotenv';
 import { DateTime } from 'luxon';
 import { fetchWithRetry, probeServer, signIn as httpSignIn } from './test-http.mjs';
 
-dotenv.config({ path: '.env.local' });
 dotenv.config();
 
 const BASE = process.env.WORKSPACE_TEST_URL || 'http://localhost:3000';
@@ -142,7 +140,7 @@ describe('a stale session is closed by a page load, not by a job', () => {
       updatedAt: new Date(),
     });
 
-    // No cron call anywhere — just the request an employee makes every morning.
+    // Nothing scheduled runs — just the request an employee makes every morning.
     const today = await call('employee', '/api/workspace/attendance/today');
     assert.equal(today.status, 200);
 
@@ -254,15 +252,6 @@ describe('leave carries forward from a cycle nobody rolled', () => {
         { key: 'COMPANY' },
         { $set: { leaveCarryForward: before.leaveCarryForward } }
       );
-    }
-  });
-});
-
-describe('the cron routes stay safe while unscheduled', () => {
-  test('they refuse an unauthenticated call even with no schedule', { skip: skip() }, async () => {
-    for (const job of ['daily', 'auto-close', 'mark-absent']) {
-      const res = await fetchWithRetry(BASE + '/api/workspace/cron/' + job, { redirect: 'manual' });
-      assert.ok([401, 503].includes(res.status), job + ' returned ' + res.status);
     }
   });
 });

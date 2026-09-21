@@ -2,15 +2,16 @@ import mongoose from 'mongoose';
 
 const { ObjectId } = mongoose.Schema.Types;
 
+/**
+ * Every notification is raised by something a person just did — a decision, a
+ * day being closed. There are no scheduled or digest types: nothing in the
+ * portal runs on a timer.
+ */
 export const NOTIFICATION_TYPES = Object.freeze([
-  'CLOCK_IN_REMINDER',
-  'CLOCK_OUT_REMINDER',
   'AUTO_CLOCK_OUT',
   'REQUEST_DECISION',
   'LEAVE_DECISION',
   'APPROVAL_PENDING',
-  'DAILY_SUMMARY',
-  'PROBATION_ENDING',
   'ACCOUNT',
 ]);
 
@@ -19,8 +20,8 @@ export const NOTIFICATION_TYPES = Object.freeze([
  * sent alongside where the Owner has enabled it; this collection is the record
  * either way, so nothing is lost when email is off or fails.
  *
- * `dedupeKey` lets a job that reruns (crons are idempotent by design) avoid
- * sending the same reminder twice.
+ * `dedupeKey` makes a write idempotent, so an action retried after a failure
+ * cannot notify the same person twice.
  */
 const WorkspaceNotificationSchema = new mongoose.Schema(
   {

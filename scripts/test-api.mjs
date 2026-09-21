@@ -327,29 +327,6 @@ describe('input validation rejects bad requests before the database', () => {
   });
 });
 
-describe('cron routes need the bearer secret', () => {
-  for (const job of ['auto-close', 'mark-absent', 'cycle-rollover', 'reminders', 'daily-summary']) {
-    test(job + ' refuses an unauthenticated call', { skip: skipUnlessUp() }, async () => {
-      const res = await fetchWithRetry(BASE + '/api/workspace/cron/' + job, { redirect: 'manual' });
-      assert.equal(res.status, 401);
-    });
-  }
-
-  test('a signed-in session is still not enough', { skip: skipUnlessUp() }, async () => {
-    const res = await call('owner', '/api/workspace/cron/auto-close');
-    assert.equal(res.status, 401);
-  });
-
-  test('the right secret is accepted', { skip: skipUnlessUp() }, async () => {
-    const secret = process.env.CRON_SECRET;
-    if (!secret) return;
-    const res = await fetchWithRetry(BASE + '/api/workspace/cron/auto-close', {
-      headers: { authorization: 'Bearer ' + secret },
-    });
-    assert.equal(res.status, 200);
-  });
-});
-
 describe('the workspace is never indexed', () => {
   test('pages carry a noindex header', { skip: skipUnlessUp() }, async () => {
     const res = await fetchWithRetry(BASE + '/workspace/login', { redirect: 'manual' });

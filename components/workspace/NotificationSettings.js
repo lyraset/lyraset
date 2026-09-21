@@ -7,45 +7,29 @@ import { apiPatch } from './api';
 /**
  * Notification toggles.
  *
+ * Every notification here is raised by something that just happened — a
+ * decision, a day being closed. Nothing runs on a timer, so there are no
+ * reminders or digests to switch off.
+ *
  * Account notices — a password reset, a deactivation — are deliberately not
  * listed: they are never switched off, because an account changing under
  * someone is not optional information.
  */
 const TOGGLES = [
   {
-    name: 'clockInReminder',
-    label: 'Clock-in reminder',
-    hint: 'Sent 15 minutes after a shift starts, to anyone who has not clocked in. Skips leave and holidays.',
-  },
-  {
-    name: 'clockOutReminder',
-    label: 'Clock-out reminder',
-    hint: 'Sent once a shift has ended and the session is still open.',
-  },
-  {
     name: 'autoClockOutNotice',
     label: 'Auto clock-out notice',
-    hint: 'Tells the employee their day was closed automatically.',
+    hint: 'Tells the employee their day was closed automatically because they never clocked out.',
   },
   {
     name: 'requestDecision',
     label: 'Request and leave decisions',
-    hint: 'Tells the employee what was approved or rejected.',
+    hint: 'Tells the employee what was approved or rejected, as soon as it is decided.',
   },
   {
     name: 'approverPending',
     label: 'New approvals waiting',
-    hint: 'Tells the Owner and CEO that something needs a decision.',
-  },
-  {
-    name: 'leadershipDailySummary',
-    label: 'Morning summary',
-    hint: "Yesterday's attendance, lates, absences and missing EODs, for leadership.",
-  },
-  {
-    name: 'probationEndingAlert',
-    label: 'Probation ending',
-    hint: 'Tells the Owner a week before someone finishes probation.',
+    hint: 'Tells the Owner and CEO when something needs a decision.',
   },
 ];
 

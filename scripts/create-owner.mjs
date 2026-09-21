@@ -13,7 +13,6 @@ import { User, OFFICE_TIMEZONES } from './workspace-models.mjs';
 import { ROLES } from '../lib/workspace/permissions.js';
 import { hashPassword, generatePassword } from '../lib/workspace/passwords.js';
 
-dotenv.config({ path: '.env.local' });
 dotenv.config();
 
 const { values } = parseArgs({

@@ -12,13 +12,9 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const Schema = z.object({
-  clockInReminder: z.boolean().optional(),
-  clockOutReminder: z.boolean().optional(),
   autoClockOutNotice: z.boolean().optional(),
   requestDecision: z.boolean().optional(),
   approverPending: z.boolean().optional(),
-  leadershipDailySummary: z.boolean().optional(),
-  probationEndingAlert: z.boolean().optional(),
   email: z.boolean().optional(),
 });
 
