@@ -32,14 +32,22 @@ const WorkspaceNotificationSchema = new mongoose.Schema(
     read: { type: Boolean, default: false },
     readAt: { type: Date, default: null },
     emailedAt: { type: Date, default: null },
-    dedupeKey: { type: String, default: null },
+    // No default: an absent key stays absent, which keeps it out of the
+    // partial dedupe index below.
+    dedupeKey: { type: String, default: undefined },
     isSeedData: { type: Boolean, default: false },
   },
   { timestamps: true, collection: 'workspace_notifications' }
 );
 
 WorkspaceNotificationSchema.index({ userId: 1, read: 1, createdAt: -1 });
-WorkspaceNotificationSchema.index({ dedupeKey: 1 }, { unique: true, sparse: true });
+// Partial, not sparse: a sparse index still indexes an explicit null, so two
+// notifications that simply have no dedupe key would collide with each other.
+// Restricting the index to string keys means only real keys are unique.
+WorkspaceNotificationSchema.index(
+  { dedupeKey: 1 },
+  { unique: true, partialFilterExpression: { dedupeKey: { $type: 'string' } }, name: 'dedupe_key' }
+);
 // Notifications are transient; drop them after 90 days.
 WorkspaceNotificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 90 });
 
