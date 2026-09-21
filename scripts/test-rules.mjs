@@ -15,6 +15,7 @@
  */
 import { test, describe, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { fetchWithRetry, probeServer, signIn as httpSignIn } from './test-http.mjs';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import { DateTime } from 'luxon';
@@ -28,19 +29,10 @@ const sessions = {};
 let serverUp = false;
 let db = null;
 
-async function signIn(identifier, password) {
-  const res = await fetch(BASE + '/api/workspace/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ identifier, password }),
-  });
-  if (!res.ok) throw new Error('sign-in failed for ' + identifier + ': ' + res.status);
-  const cookie = (res.headers.getSetCookie?.() ?? []).find((c) => c.startsWith('lyr_ws_session='));
-  return cookie.split(';')[0];
-}
+const signIn = (identifier, password) => httpSignIn(BASE, identifier, password);
 
 async function call(role, path, { method = 'GET', body = null } = {}) {
-  const res = await fetch(BASE + path, {
+  const res = await fetchWithRetry(BASE + path, {
     method,
     headers: {
       ...(sessions[role] ? { cookie: sessions[role] } : {}),
@@ -53,12 +45,7 @@ async function call(role, path, { method = 'GET', body = null } = {}) {
   return { status: res.status, data };
 }
 
-try {
-  const probe = await fetch(BASE + '/api/workspace/auth/me', { redirect: 'manual' });
-  serverUp = probe.status === 401 || probe.ok;
-} catch {
-  serverUp = false;
-}
+serverUp = await probeServer(BASE);
 
 if (serverUp) {
   sessions.owner = await signIn('DEMO-001', 'Demo@Owner2026');
@@ -109,7 +96,7 @@ describe('auto clock-out closes a session that was left open', () => {
         updatedAt: new Date(),
       });
 
-      const cron = await fetch(BASE + '/api/workspace/cron/auto-close', {
+      const cron = await fetchWithRetry(BASE + '/api/workspace/cron/auto-close', {
         headers: { authorization: 'Bearer ' + secret },
       });
       assert.equal(cron.status, 200);
@@ -129,7 +116,7 @@ describe('auto clock-out closes a session that was left open', () => {
       );
 
       // Re-running the job changes nothing: it has to be safe to fire late.
-      const rerun = await fetch(BASE + '/api/workspace/cron/auto-close', {
+      const rerun = await fetchWithRetry(BASE + '/api/workspace/cron/auto-close', {
         headers: { authorization: 'Bearer ' + secret },
       });
       assert.equal(rerun.status, 200);
@@ -278,7 +265,7 @@ describe('absence marking only touches days that deserve it', () => {
       const secret = process.env.CRON_SECRET;
       if (!secret || !db) return;
 
-      const res = await fetch(BASE + '/api/workspace/cron/mark-absent', {
+      const res = await fetchWithRetry(BASE + '/api/workspace/cron/mark-absent', {
         headers: { authorization: 'Bearer ' + secret },
       });
       assert.equal(res.status, 200);

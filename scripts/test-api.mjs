@@ -15,6 +15,7 @@
  */
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { fetchWithRetry, probeServer, signIn as httpSignIn } from './test-http.mjs';
 
 const BASE = process.env.WORKSPACE_TEST_URL || 'http://localhost:3000';
 
@@ -28,36 +29,14 @@ const ACCOUNTS = {
 let serverUp = false;
 const sessions = {};
 
-/** Pull the session cookie out of a Set-Cookie header. */
-function readSessionCookie(res) {
-  const raw = res.headers.getSetCookie?.() ?? [];
-  for (const cookie of raw) {
-    if (cookie.startsWith('lyr_ws_session=')) return cookie.split(';')[0];
-  }
-  return null;
-}
-
-async function signIn(role) {
-  const res = await fetch(BASE + '/api/workspace/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(ACCOUNTS[role]),
-  });
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error('Could not sign in as ' + role + ': ' + res.status + ' ' + body);
-  }
-  const cookie = readSessionCookie(res);
-  assert.ok(cookie, 'login should set a session cookie for ' + role);
-  return cookie;
-}
+const signIn = (role) => httpSignIn(BASE, ACCOUNTS[role].identifier, ACCOUNTS[role].password);
 
 /** Call an endpoint as a role (or signed out when role is null). */
 async function call(role, path, { method = 'GET', body = null } = {}) {
   const headers = {};
   if (role) headers.cookie = sessions[role];
   if (body) headers['Content-Type'] = 'application/json';
-  const res = await fetch(BASE + path, {
+  const res = await fetchWithRetry(BASE + path, {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
@@ -68,12 +47,7 @@ async function call(role, path, { method = 'GET', body = null } = {}) {
 
 // Top-level await, not a before() hook: each test's `skip` option is evaluated
 // when the test is defined, which happens before any hook would have run.
-try {
-  const res = await fetch(BASE + '/api/workspace/auth/me', { redirect: 'manual' });
-  serverUp = res.status === 401 || res.ok;
-} catch {
-  serverUp = false;
-}
+serverUp = await probeServer(BASE);
 if (serverUp) {
   for (const role of Object.keys(ACCOUNTS)) sessions[role] = await signIn(role);
 }
@@ -88,7 +62,7 @@ describe('authentication', () => {
   });
 
   test('a wrong password never says which half was wrong', { skip: skipUnlessUp() }, async () => {
-    const res = await fetch(BASE + '/api/workspace/auth/login', {
+    const res = await fetchWithRetry(BASE + '/api/workspace/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identifier: 'DEMO-101', password: 'definitely-wrong' }),
@@ -99,7 +73,7 @@ describe('authentication', () => {
   });
 
   test('an unknown account gets the same message', { skip: skipUnlessUp() }, async () => {
-    const res = await fetch(BASE + '/api/workspace/auth/login', {
+    const res = await fetchWithRetry(BASE + '/api/workspace/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identifier: 'NOPE-999', password: 'whatever' }),
@@ -356,7 +330,7 @@ describe('input validation rejects bad requests before the database', () => {
 describe('cron routes need the bearer secret', () => {
   for (const job of ['auto-close', 'mark-absent', 'cycle-rollover', 'reminders', 'daily-summary']) {
     test(job + ' refuses an unauthenticated call', { skip: skipUnlessUp() }, async () => {
-      const res = await fetch(BASE + '/api/workspace/cron/' + job, { redirect: 'manual' });
+      const res = await fetchWithRetry(BASE + '/api/workspace/cron/' + job, { redirect: 'manual' });
       assert.equal(res.status, 401);
     });
   }
@@ -369,7 +343,7 @@ describe('cron routes need the bearer secret', () => {
   test('the right secret is accepted', { skip: skipUnlessUp() }, async () => {
     const secret = process.env.CRON_SECRET;
     if (!secret) return;
-    const res = await fetch(BASE + '/api/workspace/cron/auto-close', {
+    const res = await fetchWithRetry(BASE + '/api/workspace/cron/auto-close', {
       headers: { authorization: 'Bearer ' + secret },
     });
     assert.equal(res.status, 200);
@@ -378,19 +352,19 @@ describe('cron routes need the bearer secret', () => {
 
 describe('the workspace is never indexed', () => {
   test('pages carry a noindex header', { skip: skipUnlessUp() }, async () => {
-    const res = await fetch(BASE + '/workspace/login', { redirect: 'manual' });
+    const res = await fetchWithRetry(BASE + '/workspace/login', { redirect: 'manual' });
     assert.match(res.headers.get('x-robots-tag') ?? '', /noindex/);
     assert.match(res.headers.get('cache-control') ?? '', /no-store/);
   });
 
   test('robots.txt disallows the whole area', { skip: skipUnlessUp() }, async () => {
-    const res = await fetch(BASE + '/robots.txt');
+    const res = await fetchWithRetry(BASE + '/robots.txt');
     const body = await res.text();
     assert.match(body, /Disallow: \/workspace/);
   });
 
   test('the sitemap does not mention it', { skip: skipUnlessUp() }, async () => {
-    const res = await fetch(BASE + '/sitemap.xml');
+    const res = await fetchWithRetry(BASE + '/sitemap.xml');
     const body = await res.text();
     assert.equal(body.includes('/workspace'), false);
   });
