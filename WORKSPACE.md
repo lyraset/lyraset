@@ -99,7 +99,7 @@ npm run create-owner -- --reset
 
 ```bash
 npm test          # 106 unit tests, no database or server needed
-npm run test:live # 87 more against a running, seeded server
+npm run test:live # 93 more against a running, seeded server
 npm run test:all  # both
 ```
 
@@ -110,7 +110,9 @@ date-range overrides, the grace window, paid versus unpaid breaks, the sandwich
 rule, and leave that spans two cycles.
 
 `npm run test:live` needs `npm run dev` and a seeded database in another
-terminal. It signs in as each role and calls every protected endpoint and page,
+terminal. It runs the files serially: they share one database and the same demo
+accounts, so file-level parallelism would let one suite delete a fixture
+another is mid-way through using. It signs in as each role and calls every protected endpoint and page,
 asserting the exact status the permission table says it should get, then walks
 the real flows: clock in, break, EOD and clock-out, leave against a quota,
 payroll locking, password reset, auto clock-out. It skips itself if no server
