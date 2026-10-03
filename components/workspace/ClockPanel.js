@@ -24,7 +24,9 @@ const BREAK_TYPES = [
 
 export default function ClockPanel({ initialState, projects = [], minDescription = 0, userId }) {
   const [state, setState] = useState(initialState);
-  const [now, setNow] = useState(() => Date.now());
+  // Seeded with the server's clock, not the browser's: reading Date.now() here
+  // would render a different second on each side and hydration would fail.
+  const [now, setNow] = useState(() => initialState?.serverNow ?? Date.now());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -37,6 +39,8 @@ export default function ClockPanel({ initialState, projects = [], minDescription
   // The visible clock ticks every second; the numbers behind it come from the
   // server, so a wrong device clock changes nothing that is recorded.
   useEffect(() => {
+    // Once hydrated, the browser's own clock takes over immediately.
+    setNow(Date.now());
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);

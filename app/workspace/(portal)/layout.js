@@ -17,7 +17,7 @@ export default async function PortalLayout({ children }) {
 
   // Filtered on the server: a link the role cannot use is never sent.
   const nav = NAV_ITEMS.filter((item) => !item.permission || can(user, item.permission)).map(
-    ({ label, href, group }) => ({ label, href, group })
+    ({ label, href, group, icon }) => ({ label, href, group, icon })
   );
 
   return (

@@ -89,8 +89,8 @@
 .ws-badge-WFH,
 .ws-badge-OFFICIAL_DUTY {
   background: var(--ws-ok-soft);
-  color: #7fe3b8;
-  border-color: rgba(53, 201, 138, 0.35);
+  color: var(--ws-ok);
+  border-color: var(--ws-ok-line);
 }
 .ws-badge-LATE,
 .ws-badge-EARLY_LEAVE,
@@ -98,19 +98,19 @@
 .ws-badge-SHORT_LEAVE,
 .ws-badge-MISSING_CLOCK_OUT {
   background: var(--ws-warn-soft);
-  color: #f6d78a;
-  border-color: rgba(240, 180, 41, 0.35);
+  color: var(--ws-warn);
+  border-color: var(--ws-warn-line);
 }
 .ws-badge-ABSENT {
   background: var(--ws-danger-soft);
-  color: #f7a2a7;
-  border-color: rgba(242, 98, 107, 0.35);
+  color: var(--ws-danger);
+  border-color: var(--ws-danger-line);
 }
 .ws-badge-ON_LEAVE,
 .ws-badge-HOLIDAY {
   background: var(--ws-info-soft);
-  color: #a9dcf4;
-  border-color: rgba(86, 182, 230, 0.35);
+  color: var(--ws-info);
+  border-color: var(--ws-info-line);
 }
 .ws-badge-WEEKEND,
 .ws-badge-NOT_MARKED,
@@ -121,13 +121,13 @@
 }
 .ws-badge-PENDING {
   background: var(--ws-warn-soft);
-  color: #f6d78a;
-  border-color: rgba(240, 180, 41, 0.35);
+  color: var(--ws-warn);
+  border-color: var(--ws-warn-line);
 }
 .ws-badge-APPROVED {
   background: var(--ws-ok-soft);
-  color: #7fe3b8;
-  border-color: rgba(53, 201, 138, 0.35);
+  color: var(--ws-ok);
+  border-color: var(--ws-ok-line);
 }
 .ws-badge-REJECTED,
 .ws-badge-CANCELLED {
@@ -138,8 +138,8 @@
 .ws-badge-PARTIALLY_APPROVED,
 .ws-badge-CANCEL_PENDING {
   background: var(--ws-info-soft);
-  color: #a9dcf4;
-  border-color: rgba(86, 182, 230, 0.35);
+  color: var(--ws-info);
+  border-color: var(--ws-info-line);
 }
 
 .ws-flag {
@@ -194,7 +194,7 @@
   border-bottom: 0;
 }
 .ws-table tbody tr:hover td {
-  background: rgba(61, 123, 255, 0.06);
+  background: rgba(27, 111, 242, 0.08);
 }
 .ws-table td.ws-wrap {
   white-space: normal;
@@ -296,7 +296,7 @@
     box-shadow: 0 0 0 0 var(--ws-accent-soft);
   }
   100% {
-    box-shadow: 0 0 0 14px rgba(61, 123, 255, 0);
+    box-shadow: 0 0 0 14px rgba(27, 111, 242, 0);
   }
 }
 .ws-confirmed {

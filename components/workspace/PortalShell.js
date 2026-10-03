@@ -5,6 +5,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NAV_GROUPS } from '@/lib/workspace/navigation';
 import { apiGet, apiPost } from './api';
+import BrandMark from './BrandMark';
+import NavIcon from './NavIcon';
+import ThemeToggle from './ThemeToggle';
+
+/** Where the collapsed/expanded choice is remembered, per browser. */
+const COLLAPSED_KEY = 'lyraset.workspace.navCollapsed';
 
 /**
  * The portal shell: sidebar on desktop, a collapsing top bar on phones.
@@ -12,15 +18,42 @@ import { apiGet, apiPost } from './api';
  * The navigation it renders has already been filtered by permission on the
  * server, so this component never decides who may see what — it only lays out
  * what it was given.
+ *
+ * On desktop the sidebar collapses to a rail of icons, which is remembered for
+ * next time. On a phone it is the Menu button that opens and closes it, so the
+ * two never fight each other.
  */
 export default function PortalShell({ nav, user, roleLabel, children }) {
   const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   // A tap on a link should close the menu, not leave it covering the page.
   useEffect(() => {
     setNavOpen(false);
   }, [pathname]);
+
+  // Read after mount, never during render: the server cannot know this, and a
+  // different first render in the browser would break hydration.
+  useEffect(() => {
+    try {
+      setCollapsed(window.localStorage.getItem(COLLAPSED_KEY) === 'true');
+    } catch {
+      // Private browsing, or storage turned off. The sidebar simply starts open.
+    }
+  }, []);
+
+  const toggleCollapsed = () => {
+    setCollapsed((current) => {
+      const next = !current;
+      try {
+        window.localStorage.setItem(COLLAPSED_KEY, String(next));
+      } catch {
+        // Not worth telling anyone about: it only costs them the preference.
+      }
+      return next;
+    });
+  };
 
   const isCurrent = (href) =>
     href === '/workspace' ? pathname === '/workspace' : pathname.startsWith(href);
@@ -33,8 +66,9 @@ export default function PortalShell({ nav, user, roleLabel, children }) {
   return (
     <div className="ws-shell">
       <div className="ws-mobile-bar">
-        <p className="ws-brand-mark">LYRASET Workspace</p>
+        <BrandMark size={24} />
         <div className="d-flex align-items-center gap-2">
+          <ThemeToggle />
           <NotificationBell />
           <button
             type="button"
@@ -50,8 +84,27 @@ export default function PortalShell({ nav, user, roleLabel, children }) {
 
       {/* Always in the DOM: CSS shows it as a sidebar on desktop and collapses
           it behind the Menu button only at phone width. */}
-      <aside className="ws-sidebar" id="ws-sidebar" data-open={navOpen ? 'true' : 'false'}>
-        <p className="ws-brand-mark">LYRASET Workspace</p>
+      <aside
+        className="ws-sidebar"
+        id="ws-sidebar"
+        data-open={navOpen ? 'true' : 'false'}
+        data-collapsed={collapsed ? 'true' : 'false'}
+      >
+        <div className="ws-sidebar-head">
+          <BrandMark size={26} />
+          <button
+            type="button"
+            className="ws-collapse"
+            onClick={toggleCollapsed}
+            aria-expanded={!collapsed}
+            aria-controls="ws-sidebar"
+            aria-label={collapsed ? 'Expand the menu' : 'Collapse the menu'}
+            title={collapsed ? 'Expand the menu' : 'Collapse the menu'}
+          >
+            <NavIcon name={collapsed ? 'chevronRight' : 'chevronLeft'} />
+          </button>
+        </div>
+
         <nav className="ws-nav" aria-label="Workspace">
           {groups.map((group) => (
             <div className="ws-nav-group" key={group.id}>
@@ -62,8 +115,11 @@ export default function PortalShell({ nav, user, roleLabel, children }) {
                   href={item.href}
                   className="ws-nav-link"
                   aria-current={isCurrent(item.href) ? 'page' : undefined}
+                  // The label is the only thing left once the rail collapses.
+                  title={collapsed ? item.label : undefined}
                 >
-                  {item.label}
+                  <NavIcon name={item.icon} />
+                  <span className="ws-nav-label">{item.label}</span>
                 </Link>
               ))}
             </div>
@@ -76,8 +132,9 @@ export default function PortalShell({ nav, user, roleLabel, children }) {
             {roleLabel} · {user.employeeId}
           </p>
           <form action="/api/workspace/auth/logout" method="post">
-            <button type="submit" className="btn ws-btn-ghost w-100">
-              Sign out
+            <button type="submit" className="btn ws-btn-ghost w-100" title="Sign out">
+              <NavIcon name="signOut" />
+              <span className="ws-nav-label">Sign out</span>
             </button>
           </form>
         </div>
@@ -86,7 +143,10 @@ export default function PortalShell({ nav, user, roleLabel, children }) {
       <main className="ws-main">
         <div className="ws-topbar d-none d-lg-flex">
           <span />
-          <NotificationBell />
+          <div className="ws-topbar-actions">
+            <ThemeToggle />
+            <NotificationBell />
+          </div>
         </div>
         {children}
       </main>

@@ -5,6 +5,22 @@
    Bootstrap class for the dark shell or adds a ws- class of its own.
    ========================================================================== */
 
+/*
+ * The portal runs one notch tighter than the public site — a shift roster, a
+ * month of attendance and an approvals queue all want more rows on screen than
+ * a marketing page does. Everything in the shell is sized in rem, so dropping
+ * the root font size scales the whole portal at once: type, spacing, controls
+ * and corners together, exactly as a browser at 80% zoom would.
+ *
+ * It is a percentage, not a pixel size, so anyone who has raised their
+ * browser's default text size keeps that increase. :has() scopes it to pages
+ * that actually render the portal; the public site shares this <html> and is
+ * left alone. A browser without :has() simply shows the portal at full size.
+ */
+html:has(.ws-root) {
+  font-size: 80%;
+}
+
 .ws-root {
   --ws-bg: #070e21;
   --ws-surface: #0e1a36;
@@ -14,26 +30,46 @@
   --ws-line-soft: #1a2950;
   --ws-text: #e8eefc;
   --ws-muted: #93a3c7;
-  --ws-faint: #5d6d93;
-  --ws-accent: #3d7bff;
-  --ws-accent-press: #2c63db;
-  --ws-accent-soft: rgba(61, 123, 255, 0.14);
+  --ws-faint: #8291b8;
+  /* The brand blue, dark enough that white button text clears WCAG AA on it. */
+  --ws-accent: #1b6ff2;
+  --ws-accent-press: #1660d8;
+  --ws-accent-soft: rgba(27, 111, 242, 0.16);
+  /* Link text needs the opposite: light enough to read on a dark surface. */
+  --ws-link: #5aa0ff;
+  --ws-link-hover: #93b9ff;
 
   --ws-ok: #35c98a;
   --ws-ok-soft: rgba(53, 201, 138, 0.14);
+  --ws-ok-line: rgba(53, 201, 138, 0.35);
   --ws-warn: #f0b429;
   --ws-warn-soft: rgba(240, 180, 41, 0.14);
+  --ws-warn-line: rgba(240, 180, 41, 0.35);
   --ws-danger: #f2626b;
   --ws-danger-soft: rgba(242, 98, 107, 0.14);
+  --ws-danger-line: rgba(242, 98, 107, 0.45);
   --ws-info: #56b6e6;
   --ws-info-soft: rgba(86, 182, 230, 0.14);
+  --ws-info-line: rgba(86, 182, 230, 0.35);
+  --ws-shadow: rgba(0, 0, 0, 0.45);
 
-  --ws-radius: 12px;
-  --ws-radius-sm: 8px;
+  --ws-radius: 0.75rem;
+  --ws-radius-sm: 0.5rem;
+
+  /* Bootstrap is themed for the public site, which is white: headings carry its
+     dark ink and the select caret is near-black. Both are invisible here, so
+     the portal re-points those Bootstrap tokens at its own palette. */
+  --bs-heading-color: var(--ws-text);
+  --bs-body-color: var(--ws-text);
+  --bs-border-color: var(--ws-line);
+  --bs-emphasis-color: var(--ws-text);
+  --bs-secondary-color: var(--ws-muted);
 
   min-height: 100vh;
   background: var(--ws-bg);
   color: var(--ws-text);
+  /* Scrollbars inside the portal follow the dark surface, not the white site. */
+  scrollbar-color: var(--ws-surface-3) transparent;
   font-family:
     var(--font-body),
     system-ui,
@@ -44,17 +80,87 @@
   color-scheme: dark;
 }
 
+/* The public site's body is white. On a portal page the body shows at the
+   edges — behind an overscroll bounce, or below a short page — so it takes the
+   portal's background too. */
+body:has(.ws-root) {
+  /* The literal, not var(--ws-bg): the token lives on .ws-root, not on body. */
+  background: #070e21;
+}
+
+/*
+ * Light mode.
+ *
+ * The script in app/workspace/layout.js writes data-ws-theme onto <body> before
+ * anything paints — the viewer's saved choice, or their system setting — so the
+ * page never flashes the wrong theme. Dark above stays the default; only the
+ * tokens that differ are listed here, and every text/surface pairing was
+ * checked against WCAG AA exactly as the dark palette was.
+ */
+body[data-ws-theme='light'] .ws-root {
+  --ws-bg: #f2f5fb;
+  --ws-surface: #ffffff;
+  --ws-surface-2: #e9eff9;
+  --ws-surface-3: #dbe4f4;
+  --ws-line: #d4dcec;
+  --ws-line-soft: #e7ecf6;
+  --ws-text: #0d1a33;
+  --ws-muted: #4d5c7a;
+  --ws-faint: #59677f;
+  /* The same brand blue: it carries white button text in either theme. */
+  --ws-accent: #1b6ff2;
+  --ws-accent-press: #1660d8;
+  --ws-accent-soft: rgba(27, 111, 242, 0.12);
+  /* Link text flips the other way: dark enough to read on a white panel. */
+  --ws-link: #1457c7;
+  --ws-link-hover: #0f469f;
+  --ws-ok: #126e4a;
+  --ws-ok-soft: rgba(18, 110, 74, 0.12);
+  --ws-ok-line: rgba(18, 110, 74, 0.3);
+  --ws-warn: #8a5a00;
+  --ws-warn-soft: rgba(138, 90, 0, 0.12);
+  --ws-warn-line: rgba(138, 90, 0, 0.3);
+  --ws-danger: #c0262f;
+  --ws-danger-soft: rgba(192, 38, 47, 0.1);
+  --ws-danger-line: rgba(192, 38, 47, 0.35);
+  --ws-info: #0f6183;
+  --ws-info-soft: rgba(15, 97, 131, 0.1);
+  --ws-info-line: rgba(15, 97, 131, 0.3);
+  --ws-shadow: rgba(13, 26, 51, 0.14);
+
+  color-scheme: light;
+  scrollbar-color: var(--ws-surface-3) transparent;
+}
+body[data-ws-theme='light']:has(.ws-root) {
+  background: #f2f5fb;
+}
+/* The select caret is drawn in the stylesheet, so it darkens here by hand. */
+body[data-ws-theme='light'] .ws-root .form-select {
+  --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%234d5c7a' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+
 .ws-root :focus-visible {
-  outline: 2px solid var(--ws-accent);
+  outline: 2px solid var(--ws-link);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-.ws-root a {
-  color: var(--ws-accent);
+/* Headings, so Bootstrap's dark ink can never render dark-on-dark here. */
+.ws-root :where(h1, h2, h3, h4, h5, h6) {
+  color: var(--ws-text);
 }
-.ws-root a:hover {
-  color: #6b9aff;
+
+/*
+ * Links are accent blue — but :where() holds this at the specificity of
+ * .ws-root alone, so a link that carries a component class (a nav link, a
+ * button-shaped link) keeps that component's own colour instead of being
+ * repainted blue by this rule.
+ */
+.ws-root :where(a) {
+  color: var(--ws-link);
+}
+.ws-root :where(a:hover) {
+  color: var(--ws-link-hover);
 }
 
 .ws-root hr {
@@ -86,11 +192,40 @@
   color: var(--ws-faint);
 }
 
+/*
+ * The brand lockup: the LS mark, then "Workspace" so the portal says what it
+ * is. The show/hide rules in layout.css key off this class.
+ */
 .ws-brand-mark {
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   margin: 0 0 1.5rem;
+}
+.ws-brand-word {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
   color: var(--ws-text);
+}
+/*
+ * The mark is a transparent PNG in brand blue and near-black navy, drawn for a
+ * white page. On the dark shell it is shown in white — the same treatment the
+ * site uses in its footer and admin — and in light mode it is left exactly as
+ * drawn.
+ */
+.ws-brand-logo {
+  display: block;
+  flex-shrink: 0;
+  /* Height comes from the component, in rem; width follows the square ratio. */
+  width: auto;
+}
+.ws-root .ws-brand-mark .ws-brand-logo {
+  filter: brightness(0) invert(1);
+}
+body[data-ws-theme='light'] .ws-root .ws-brand-mark .ws-brand-logo {
+  filter: none;
 }
 
 .ws-mono {
@@ -124,9 +259,14 @@
   border-color: var(--ws-accent-press);
   color: #fff;
 }
-.ws-btn-primary:disabled {
-  opacity: 0.55;
+/* Bootstrap's own .btn:disabled would otherwise strip the fill and leave the
+   browser's grey text, which on this background reads as nothing at all. */
+.ws-root .ws-btn-primary:disabled,
+.ws-root .ws-btn-primary.disabled {
+  background-color: var(--ws-accent);
+  border-color: var(--ws-accent);
   color: #fff;
+  opacity: 0.6;
 }
 
 .ws-btn-ghost {
@@ -149,7 +289,7 @@
 
 .ws-btn-danger {
   background: transparent;
-  border: 1px solid rgba(242, 98, 107, 0.5);
+  border: 1px solid var(--ws-danger-line);
   color: var(--ws-danger);
   border-radius: var(--ws-radius-sm);
 }
@@ -174,10 +314,12 @@
   margin-bottom: 0.3rem;
 }
 
+/* background-color, never the `background` shorthand: the shorthand would wipe
+   the select's own caret image along with it. */
 .ws-input,
 .ws-root .form-control,
 .ws-root .form-select {
-  background: var(--ws-bg);
+  background-color: var(--ws-bg);
   border: 1px solid var(--ws-line);
   color: var(--ws-text);
   border-radius: var(--ws-radius-sm);
@@ -185,7 +327,7 @@
 .ws-input:focus,
 .ws-root .form-control:focus,
 .ws-root .form-select:focus {
-  background: var(--ws-bg);
+  background-color: var(--ws-bg);
   border-color: var(--ws-accent);
   color: var(--ws-text);
   box-shadow: 0 0 0 3px var(--ws-accent-soft);
@@ -196,13 +338,33 @@
 }
 .ws-root .form-control:disabled,
 .ws-root .form-select:disabled {
-  background: var(--ws-surface);
+  background-color: var(--ws-surface);
   color: var(--ws-muted);
 }
+.ws-root .form-select {
+  /* Bootstrap's caret is near-black; on this background it disappears. */
+  --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2393a3c7' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+/* The native dropdown list is drawn by the OS, so it needs its own colours. */
 .ws-root .form-select option {
   background: var(--ws-surface);
   color: var(--ws-text);
 }
+/* The browser draws the file picker's button; left alone it is a light grey
+   slab with dark text sitting in a dark field. */
+.ws-root .form-control[type='file']::file-selector-button {
+  background-color: var(--ws-surface-2);
+  border: 0;
+  border-right: 1px solid var(--ws-line);
+  color: var(--ws-text);
+  padding: 0.7rem 0.9rem;
+  margin: -0.75rem 0.9rem -0.75rem -1rem;
+}
+.ws-root .form-control[type='file']:hover::file-selector-button {
+  background-color: var(--ws-surface-3);
+  color: var(--ws-text);
+}
+
 .ws-root .form-check-input {
   background-color: var(--ws-bg);
   border-color: var(--ws-line);
@@ -243,23 +405,23 @@
 }
 .ws-root .alert-info.ws-alert {
   background: var(--ws-info-soft);
-  border-color: rgba(86, 182, 230, 0.35);
-  color: #bfe4f7;
+  border-color: var(--ws-info-line);
+  color: var(--ws-info);
 }
 .ws-root .alert-success.ws-alert {
   background: var(--ws-ok-soft);
-  border-color: rgba(53, 201, 138, 0.35);
-  color: #b6ecd3;
+  border-color: var(--ws-ok-line);
+  color: var(--ws-ok);
 }
 .ws-root .alert-warning.ws-alert {
   background: var(--ws-warn-soft);
-  border-color: rgba(240, 180, 41, 0.35);
-  color: #f6dfa8;
+  border-color: var(--ws-warn-line);
+  color: var(--ws-warn);
 }
 .ws-root .alert-danger.ws-alert {
   background: var(--ws-danger-soft);
-  border-color: rgba(242, 98, 107, 0.35);
-  color: #f7c3c6;
+  border-color: var(--ws-danger-line);
+  color: var(--ws-danger);
 }
 
 /* --- Login --------------------------------------------------------------- */
@@ -277,6 +439,19 @@
   border: 1px solid var(--ws-line);
   border-radius: 14px;
   padding: 2rem;
+}
+.ws-login-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+/* The sign-in panel has room for a little more. */
+.ws-login-head .ws-brand-mark {
+  margin-bottom: 1.25rem;
+}
+.ws-login-head .ws-brand-word {
+  font-size: 1rem;
 }
 .ws-login-title {
   font-size: 1.6rem;

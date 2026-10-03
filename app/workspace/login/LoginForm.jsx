@@ -1,35 +1,37 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
+import ThemeToggle from '@/components/workspace/ThemeToggle';
+import BrandMark from '@/components/workspace/BrandMark';
 
-export default function LoginForm({ next = "", notice = "" }) {
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
+export default function LoginForm({ next = '', notice = '' }) {
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setError("");
+    setError('');
     if (!identifier.trim() || !password) {
-      setError("Enter your Employee ID or email and your password.");
+      setError('Enter your Employee ID or email and your password.');
       return;
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/workspace/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/workspace/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier: identifier.trim(), password, next }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error || "Sign-in failed. Try again.");
+        setError(data.error || 'Sign-in failed. Try again.');
         setLoading(false);
         return;
       }
-      window.location.assign(data.redirectTo || "/workspace");
+      window.location.assign(data.redirectTo || '/workspace');
     } catch {
       setError("Can't reach the server. Check your connection and try again.");
       setLoading(false);
@@ -39,9 +41,16 @@ export default function LoginForm({ next = "", notice = "" }) {
   return (
     <main className="ws-login">
       <section className="ws-login-panel" aria-labelledby="ws-login-title">
-        <p className="ws-brand-mark">LYRASET Workspace</p>
-        <h1 id="ws-login-title" className="ws-login-title">Sign in to clock in</h1>
-        <p className="ws-login-lead">Use the Employee ID or email and the password the Owner gave you.</p>
+        <div className="ws-login-head">
+          <BrandMark size={32} priority />
+          <ThemeToggle />
+        </div>
+        <h1 id="ws-login-title" className="ws-login-title">
+          Sign in to clock in
+        </h1>
+        <p className="ws-login-lead">
+          Use the Employee ID or email and the password the Owner gave you.
+        </p>
 
         {notice && <div className="alert alert-info ws-alert">{notice}</div>}
         {error && (
@@ -52,7 +61,9 @@ export default function LoginForm({ next = "", notice = "" }) {
 
         <form onSubmit={handleSubmit} noValidate>
           <div className="mb-3">
-            <label htmlFor="identifier" className="form-label ws-label">Employee ID or email</label>
+            <label htmlFor="identifier" className="form-label ws-label">
+              Employee ID or email
+            </label>
             <input
               id="identifier"
               className="form-control ws-input"
@@ -65,11 +76,13 @@ export default function LoginForm({ next = "", notice = "" }) {
             />
           </div>
           <div className="mb-4">
-            <label htmlFor="password" className="form-label ws-label">Password</label>
+            <label htmlFor="password" className="form-label ws-label">
+              Password
+            </label>
             <div className="input-group">
               <input
                 id="password"
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? 'text' : 'password'}
                 className="form-control ws-input"
                 autoComplete="current-password"
                 value={password}
@@ -81,12 +94,12 @@ export default function LoginForm({ next = "", notice = "" }) {
                 onClick={() => setShowPassword((v) => !v)}
                 aria-pressed={showPassword}
               >
-                {showPassword ? "Hide" : "Show"}
+                {showPassword ? 'Hide' : 'Show'}
               </button>
             </div>
           </div>
           <button type="submit" className="btn ws-btn-primary w-100" disabled={loading}>
-            {loading ? "Signing in…" : "Sign in"}
+            {loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
 

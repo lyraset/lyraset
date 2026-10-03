@@ -27,6 +27,23 @@ export const viewport = {
   initialScale: 1,
 };
 
+/**
+ * Picks the theme before the first paint: the viewer's saved choice, or what
+ * their system asks for. It runs inline, ahead of React, so nobody sees a dark
+ * page flash white (or the other way round) while the app loads. The key is
+ * shared with components/workspace/ThemeToggle.js.
+ *
+ * The flag goes on <body>, which the root layout already marks
+ * suppressHydrationWarning: React owns that element, and an attribute that
+ * appeared before it hydrated would otherwise be reported as a mismatch.
+ */
+const THEME_SCRIPT = `(function(){try{var s=localStorage.getItem('lyraset.workspace.theme');var light=s==='light'||(s!=='dark'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches);document.body.setAttribute('data-ws-theme',light?'light':'dark');}catch(e){}})();`;
+
 export default function WorkspaceRootLayout({ children }) {
-  return <div className="ws-root">{children}</div>;
+  return (
+    <>
+      <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      <div className="ws-root">{children}</div>
+    </>
+  );
 }
