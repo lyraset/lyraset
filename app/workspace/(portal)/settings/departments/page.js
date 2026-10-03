@@ -26,14 +26,15 @@ export default async function DepartmentsPage() {
           addLabel="Add department"
           emptyTitle="No departments yet"
           emptyBody="Add the first one below. You can assign people to it from their profile."
-          items={departments.map((d) => ({ id: String(d._id), name: d.name, active: d.active }))}
+          items={departments.map((d) => ({
+            id: String(d._id),
+            name: d.name,
+            active: d.active,
+            display: { active: d.active ? 'Active' : 'Retired' },
+          }))}
           columns={[
             { key: 'name', label: 'Name' },
-            {
-              key: 'active',
-              label: 'Status',
-              render: (item) => (item.active ? 'Active' : 'Retired'),
-            },
+            { key: 'active', label: 'Status' },
           ]}
           fields={[
             { name: 'name', label: 'Name', required: true, col: 'col-12 col-md-6' },

@@ -1,4 +1,5 @@
 import { STATUS_LABELS, formatDuration } from '@/lib/workspace/calc/attendance';
+import { TIMEZONE } from '@/lib/workspace/timezone';
 
 /**
  * Small presentational pieces shared across the portal.
@@ -120,16 +121,20 @@ export function Person({ name, meta = null }) {
 
 export { formatDuration };
 
-/** '14 Mar 2026' — unambiguous for both offices, unlike a numeric date. */
+/**
+ * '14 Mar 2026' — unambiguous, unlike a numeric date.
+ *
+ * A 'YYYY-MM-DD' work date is a calendar label and is shown as written. An
+ * instant (a timestamp) is shown as the date it was in Pakistan, so something
+ * that happened at 02:00 in Islamabad is not dated the day before.
+ */
 export function formatDate(value, { weekday = false } = {}) {
   if (!value) return '—';
-  const date =
-    typeof value === 'string' && value.length === 10
-      ? new Date(value + 'T00:00:00Z')
-      : new Date(value);
+  const isLabel = typeof value === 'string' && value.length === 10;
+  const date = isLabel ? new Date(value + 'T00:00:00Z') : new Date(value);
   if (Number.isNaN(date.getTime())) return '—';
   return date.toLocaleDateString('en-GB', {
-    timeZone: 'UTC',
+    timeZone: isLabel ? 'UTC' : TIMEZONE,
     ...(weekday ? { weekday: 'short' } : {}),
     day: '2-digit',
     month: 'short',
@@ -137,11 +142,29 @@ export function formatDate(value, { weekday = false } = {}) {
   });
 }
 
-/** A timestamp rendered in a named zone, so Dubai rows read as Dubai time. */
-export function formatTimeIn(value, timeZone) {
+/** '09:05' in Pakistan time, whatever the server's or the viewer's zone. */
+export function formatTime(value, { seconds = false } = {}) {
   if (!value) return '—';
-  return new Date(value).toLocaleTimeString('en-GB', {
-    timeZone,
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleTimeString('en-GB', {
+    timeZone: TIMEZONE,
+    hour: '2-digit',
+    minute: '2-digit',
+    ...(seconds ? { second: '2-digit' } : {}),
+  });
+}
+
+/** '14 Mar 2026, 09:05' in Pakistan time. */
+export function formatDateTime(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleString('en-GB', {
+    timeZone: TIMEZONE,
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   });

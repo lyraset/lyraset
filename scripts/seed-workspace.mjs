@@ -31,7 +31,6 @@ import {
   Attendance,
   Eod,
   Holiday,
-  OFFICE_TIMEZONES,
   SINGLETON_KEY,
 } from './workspace-models.mjs';
 
@@ -40,6 +39,7 @@ import { hashPassword } from '../lib/workspace/passwords.js';
 import { getScheduleForDay } from '../lib/workspace/calc/schedule.js';
 import { computeDayStatus, STATUS } from '../lib/workspace/calc/attendance.js';
 import { getCycleForDate } from '../lib/workspace/calc/cycle.js';
+import { TIMEZONE } from '../lib/workspace/timezone.js';
 
 dotenv.config();
 
@@ -133,7 +133,7 @@ const DEMO_ACCOUNTS = [
     requiresAttendance: true,
     designation: 'Social Media & Content Executive',
     department: 'Content & Social',
-    office: 'DUBAI',
+    office: 'ISLAMABAD',
     workMode: 'OFFICE',
     employmentType: 'PROBATION',
   },
@@ -148,25 +148,14 @@ const DEPARTMENTS = [
   'Graphic Design',
 ];
 
-const OFFICES = [
-  {
-    code: 'ISLAMABAD',
-    name: 'Islamabad',
-    timezone: 'Asia/Karachi',
-    weekendDays: [7],
-    policyNote:
-      'Pakistan: confirm working-hour limits, leave entitlements and overtime rates with your HR/legal advisor.',
-  },
-  {
-    code: 'DUBAI',
-    name: 'Dubai',
-    timezone: 'Asia/Dubai',
-    // The UAE weekend is Saturday and Sunday.
-    weekendDays: [6, 7],
-    policyNote:
-      'UAE: confirm working-hour limits, leave entitlements and overtime rates with your HR/legal advisor.',
-  },
-];
+/** The one office. Every time in the portal is Pakistan time. */
+const OFFICE = {
+  code: 'ISLAMABAD',
+  name: 'Islamabad',
+  weekendDays: [7],
+  policyNote:
+    'Confirm working-hour limits, leave entitlements and overtime rates with your HR/legal advisor.',
+};
 
 /** The demo default shift from the spec. */
 const STANDARD_SHIFT = {
@@ -244,11 +233,10 @@ function log(step, detail) {
 // --------------------------------------------------------------- seed steps --
 
 async function seedReferenceData() {
-  const offices = [];
-  for (const office of OFFICES) {
-    offices.push(await upsert(Office, { code: office.code }, office));
-  }
-  log('offices', offices.map((o) => o.name).join(', '));
+  const office = await upsert(Office, { code: OFFICE.code }, OFFICE);
+  // An older seed also created a Dubai office; there is only one office now.
+  await Office.deleteMany({ code: { $ne: OFFICE.code }, isSeedData: true });
+  log('office', office.name + ' (Pakistan time)');
 
   const departments = [];
   for (const name of DEPARTMENTS) {
@@ -323,7 +311,6 @@ async function seedAccounts({ shift, departments }) {
         $set: {
           ...account,
           departmentId: departmentByName.get(account.department)?._id ?? null,
-          timezone: OFFICE_TIMEZONES[account.office],
           passwordHash: await hashPassword(password),
           joiningDate: new Date('2026-01-01'),
           probationEnd: account.employmentType === 'PROBATION' ? new Date('2026-07-01') : null,
@@ -404,7 +391,7 @@ async function seedHistory({ users, shift, leaveTypes, projects, days = 30 }) {
 
   for (const user of clockers) {
     const random = seededRandom(user.employeeId.split('-')[1] * 7 + 13);
-    const tz = user.timezone;
+    const tz = TIMEZONE;
     const today = DateTime.now().setZone(tz).startOf('day');
 
     for (let back = days; back >= 1; back -= 1) {
@@ -457,7 +444,6 @@ async function seedHistory({ users, shift, leaveTypes, projects, days = 30 }) {
         {
           $set: {
             office: user.office,
-            timezone: tz,
             cycleKey: cycle.key,
             clockIn: record.clockIn,
             clockOut: record.clockOut,
@@ -552,7 +538,7 @@ async function seedRequests({ users, leaveTypes, cycleHistory }) {
   let requests = 0;
 
   for (const [index, user] of users.entries()) {
-    const tz = user.timezone;
+    const tz = TIMEZONE;
     const today = DateTime.now().setZone(tz).startOf('day');
 
     // One approved day of leave last week.
@@ -655,7 +641,7 @@ async function seedRequests({ users, leaveTypes, cycleHistory }) {
         {
           $set: {
             office: user.office,
-            payload: { clockOut: '19:10', tz },
+            payload: { clockOut: '19:10' },
             reason: 'I forgot to clock out before leaving.',
             status: 'PENDING',
             ...SEED,

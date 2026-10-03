@@ -20,7 +20,10 @@ export default function Filters({ fields }) {
       const params = new URLSearchParams(searchParams.toString());
       if (value) params.set(name, value);
       else params.delete(name);
-      router.push(pathname + (params.size ? '?' + params.toString() : ''));
+      // Not params.size: Safari before iOS 17 does not have it, so filters
+      // would silently never apply there.
+      const search = params.toString();
+      router.push(pathname + (search ? '?' + search : ''));
     },
     [router, pathname, searchParams]
   );

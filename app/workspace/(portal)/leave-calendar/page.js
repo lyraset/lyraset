@@ -6,6 +6,7 @@ import LeaveRequest from '@/models/workspace/LeaveRequest';
 import LeaveType from '@/models/workspace/LeaveType';
 import User from '@/models/workspace/User';
 import Holiday from '@/models/workspace/Holiday';
+import { TIMEZONE } from '@/lib/workspace/timezone';
 import { PageHead, Panel, Empty, formatDate } from '@/components/workspace/ui';
 import Filters from '@/components/workspace/Filters';
 
@@ -27,18 +28,16 @@ export default async function LeaveCalendarPage({ searchParams }) {
   const monthKey =
     typeof sp.month === 'string' && /^\d{4}-\d{2}$/.test(sp.month)
       ? sp.month
-      : DateTime.now().toFormat('yyyy-MM');
+      : DateTime.now().setZone(TIMEZONE).toFormat('yyyy-MM');
   const monthStart = DateTime.fromISO(monthKey + '-01');
   const from = monthStart.toISODate();
   const to = monthStart.endOf('month').toISODate();
-  const office = typeof sp.office === 'string' ? sp.office : null;
 
   await connectDB();
   const find = {
     status: { $in: ['APPROVED', 'PARTIALLY_APPROVED'] },
     approvedDates: { $gte: from, $lte: to },
   };
-  if (office) find.office = office;
 
   const [requests, types, holidays] = await Promise.all([
     LeaveRequest.find(find).lean(),
@@ -66,11 +65,7 @@ export default async function LeaveCalendarPage({ searchParams }) {
     }
   }
 
-  const holidayByDate = new Map(
-    holidays
-      .filter((h) => !office || !h.offices?.length || h.offices.includes(office))
-      .map((h) => [h.date, h])
-  );
+  const holidayByDate = new Map(holidays.map((h) => [h.date, h]));
 
   // Pad the grid so the 1st lands under the right weekday.
   const leading = monthStart.weekday - 1;
@@ -86,24 +81,11 @@ export default async function LeaveCalendarPage({ searchParams }) {
       <PageHead title="Leave calendar" lead={monthStart.toFormat('LLLL yyyy')} />
 
       <Panel>
-        <Filters
-          fields={[
-            { name: 'month', label: 'Month', type: 'month' },
-            {
-              name: 'office',
-              label: 'Office',
-              type: 'select',
-              options: [
-                { value: 'ISLAMABAD', label: 'Islamabad' },
-                { value: 'DUBAI', label: 'Dubai' },
-              ],
-            },
-          ]}
-        />
+        <Filters fields={[{ name: 'month', label: 'Month', type: 'month' }]} />
 
         {total === 0 && holidayByDate.size === 0 ? (
           <Empty title="Nobody is off this month">
-            Approved leave and holidays for the selected office will show here.
+            Approved leave and holidays for the month will show here.
           </Empty>
         ) : (
           <div

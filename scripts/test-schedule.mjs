@@ -18,9 +18,9 @@ import {
   spanMinutes,
   dayKeyFor,
 } from '../lib/workspace/calc/schedule.js';
+import { TIMEZONE, todayInPakistan } from '../lib/workspace/timezone.js';
 
 const KHI = 'Asia/Karachi';
-const DXB = 'Asia/Dubai';
 
 const STANDARD = {
   _id: 'shift-standard',
@@ -70,8 +70,7 @@ const FLEXI = {
   },
 };
 
-const ali = { id: 'u-ali', office: 'ISLAMABAD', timezone: KHI, shiftId: 'shift-standard' };
-const mahnoor = { id: 'u-mah', office: 'DUBAI', timezone: DXB, shiftId: 'shift-standard' };
+const ali = { id: 'u-ali', office: 'ISLAMABAD', shiftId: 'shift-standard' };
 
 const resolve = (user, date, extra = {}) =>
   getScheduleForDay({ user, date, shifts: [STANDARD, NIGHT, FLEXI], ...extra });
@@ -206,20 +205,16 @@ test('an override only touches the days it names', () => {
   assert.equal(s.requiredMinutes, 240);
 });
 
-test('an office-scoped override skips the other office', () => {
-  const dubaiOnly = {
-    _id: 'sched-dxb',
-    name: 'Dubai early close',
+test('an override listing the office applies to it', () => {
+  const officeOnly = {
+    _id: 'sched-isb',
+    name: 'Early close',
     from: '2026-09-21',
     to: '2026-09-21',
-    offices: ['DUBAI'],
+    offices: ['ISLAMABAD'],
     days: { mon: { working: true, start: '10:00', end: '15:00', breakMinutes: 0 } },
   };
-  assert.equal(
-    resolve(mahnoor, '2026-09-21', { specialSchedules: [dubaiOnly] }).requiredMinutes,
-    300
-  );
-  assert.equal(resolve(ali, '2026-09-21', { specialSchedules: [dubaiOnly] }).requiredMinutes, 480);
+  assert.equal(resolve(ali, '2026-09-21', { specialSchedules: [officeOnly] }).requiredMinutes, 300);
 });
 
 test('an inactive override is ignored', () => {
@@ -277,13 +272,26 @@ test('the latest overlapping assignment wins', () => {
   );
 });
 
-test('the same shift resolves to different instants in Dubai and Islamabad', () => {
-  const khi = resolve(ali, '2026-09-21');
-  const dxb = resolve(mahnoor, '2026-09-21');
-  assert.equal(khi.requiredMinutes, dxb.requiredMinutes);
-  assert.equal(DateTime.fromJSDate(dxb.startAt, { zone: DXB }).toFormat('HH:mm'), '10:00');
-  // 10:00 in Dubai is an hour later in absolute terms than 10:00 in Karachi.
-  assert.equal(dxb.startAt.getTime() - khi.startAt.getTime(), 60 * 60 * 1000);
+test('a shift is always measured in Pakistan time', () => {
+  const s = resolve(ali, '2026-09-21');
+  assert.equal(s.tz, KHI);
+  assert.equal(DateTime.fromJSDate(s.startAt, { zone: KHI }).toFormat('HH:mm'), '10:00');
+  // Pakistan is UTC+5, so 10:00 there is 05:00 UTC.
+  assert.equal(s.startAt.toISOString(), '2026-09-21T05:00:00.000Z');
+});
+
+test('a timezone left on an old user record cannot move the shift', () => {
+  const legacy = { ...ali, timezone: 'Asia/Dubai' };
+  assert.equal(resolve(legacy, '2026-09-21').startAt.toISOString(), '2026-09-21T05:00:00.000Z');
+  // 00:30 in Pakistan is still the previous evening in UTC: the work date is Pakistan's.
+  assert.equal(
+    resolveWorkDate({
+      instant: new Date('2026-09-21T19:30:00Z'),
+      user: legacy,
+      shifts: [STANDARD],
+    }),
+    '2026-09-22'
+  );
 });
 
 test('with no shift at all the day is simply not a working day', () => {
@@ -301,4 +309,15 @@ test('a default shift covers anyone with nothing assigned', () => {
     defaultShift: STANDARD,
   });
   assert.equal(s.requiredMinutes, 480);
+});
+
+test('the portal runs on Pakistan time', () => {
+  assert.equal(TIMEZONE, 'Asia/Karachi');
+});
+
+test('"today" is Pakistan’s date, not the server’s', () => {
+  // 20:00 UTC on the 21st is already 01:00 on the 22nd in Pakistan.
+  assert.equal(todayInPakistan(new Date('2026-09-21T20:00:00Z')), '2026-09-22');
+  assert.equal(todayInPakistan(new Date('2026-09-21T18:59:00Z')), '2026-09-21');
+  assert.equal(todayInPakistan(new Date('2026-09-21T19:00:00Z')), '2026-09-22');
 });

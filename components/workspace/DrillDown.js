@@ -4,15 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiPatch, issuesByField } from './api';
 import Filters from './Filters';
-import {
-  Panel,
-  StatusBadge,
-  Flags,
-  TableWrap,
-  formatDate,
-  formatDuration,
-  formatTimeIn,
-} from './ui';
+import { Panel, StatusBadge, Flags, TableWrap, formatDate, formatDuration, formatTime } from './ui';
 
 /**
  * One employee's cycle, day by day, with the EOD beside the attendance.
@@ -22,7 +14,7 @@ import {
  * field is required precisely because the record is otherwise a statement of
  * what the server observed.
  */
-export default function DrillDown({ userId, userName, timezone, days, canEdit, from, to }) {
+export default function DrillDown({ userId, userName, days, canEdit, from, to }) {
   const router = useRouter();
   const [editing, setEditing] = useState(null);
   const [expanded, setExpanded] = useState(() => new Set());
@@ -67,8 +59,8 @@ export default function DrillDown({ userId, userName, timezone, days, canEdit, f
                 <td className="ws-mono ws-muted">
                   {day.schedule.working ? day.schedule.start + '–' + day.schedule.end : '—'}
                 </td>
-                <td className="ws-mono">{formatTimeIn(day.record?.clockIn, timezone)}</td>
-                <td className="ws-mono">{formatTimeIn(day.record?.clockOut, timezone)}</td>
+                <td className="ws-mono">{formatTime(day.record?.clockIn)}</td>
+                <td className="ws-mono">{formatTime(day.record?.clockOut)}</td>
                 <td className="ws-mono ws-num">{formatDuration(day.computed.workedMinutes)}</td>
                 <td>
                   <StatusBadge status={day.status} />{' '}
@@ -99,8 +91,8 @@ export default function DrillDown({ userId, userName, timezone, days, canEdit, f
                       onClick={() =>
                         setEditing({
                           workDate: day.workDate,
-                          clockIn: formatTimeIn(day.record?.clockIn, timezone).replace('—', ''),
-                          clockOut: formatTimeIn(day.record?.clockOut, timezone).replace('—', ''),
+                          clockIn: formatTime(day.record?.clockIn).replace('—', ''),
+                          clockOut: formatTime(day.record?.clockOut).replace('—', ''),
                           overtimeMinutes: day.computed.overtimeMinutes,
                           overtimeApproved: Boolean(day.record?.overtimeApproved),
                         })

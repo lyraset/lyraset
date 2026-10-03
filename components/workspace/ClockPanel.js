@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiGet, apiPost } from './api';
 import EodDialog from './EodDialog';
+import { formatTime } from './ui';
 import { formatDuration, STATUS_LABELS } from '@/lib/workspace/calc/attendance';
+import { TIMEZONE_LABEL } from '@/lib/workspace/timezone';
 
 /**
  * The clock-in / clock-out panel.
@@ -32,8 +34,6 @@ export default function ClockPanel({ initialState, projects = [], minDescription
   const [reason, setReason] = useState('');
   const [needsReason, setNeedsReason] = useState(false);
 
-  const timezone = state?.timezone ?? 'Asia/Karachi';
-
   // The visible clock ticks every second; the numbers behind it come from the
   // server, so a wrong device clock changes nothing that is recorded.
   useEffect(() => {
@@ -49,16 +49,7 @@ export default function ClockPanel({ initialState, projects = [], minDescription
     }
   }, []);
 
-  const localTime = useMemo(
-    () =>
-      new Date(now).toLocaleTimeString('en-GB', {
-        timeZone: timezone,
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      }),
-    [now, timezone]
-  );
+  const localTime = useMemo(() => formatTime(now, { seconds: true }), [now]);
 
   // Worked minutes tick forward live while clocked in and not on a break.
   const workedMinutes = useMemo(() => {
@@ -159,7 +150,7 @@ export default function ClockPanel({ initialState, projects = [], minDescription
               {localTime}
             </p>
             <p className="ws-clock-zone">
-              {timezone.replace('_', ' ')} · {state?.workDate}
+              {TIMEZONE_LABEL} · {state?.workDate}
             </p>
 
             <p className="ws-clock-shift">
@@ -260,14 +251,7 @@ export default function ClockPanel({ initialState, projects = [], minDescription
             {state?.clockedOut && (
               <p className="ws-muted mb-0">
                 You clocked out at{' '}
-                <span className="ws-mono">
-                  {new Date(state.record.clockOut).toLocaleTimeString('en-GB', {
-                    timeZone: timezone,
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
-                .
+                <span className="ws-mono">{formatTime(state.record.clockOut)}</span>.
               </p>
             )}
           </div>
@@ -314,13 +298,7 @@ export default function ClockPanel({ initialState, projects = [], minDescription
         minDescription={minDescription}
         mode="CLOCK_OUT"
         summary={{
-          clockIn: state?.record?.clockIn
-            ? new Date(state.record.clockIn).toLocaleTimeString('en-GB', {
-                timeZone: timezone,
-                hour: '2-digit',
-                minute: '2-digit',
-              })
-            : null,
+          clockIn: state?.record?.clockIn ? formatTime(state.record.clockIn) : null,
           workedMinutes,
           breakMinutes: state?.computed?.breakMinutes ?? 0,
           statusLabel,

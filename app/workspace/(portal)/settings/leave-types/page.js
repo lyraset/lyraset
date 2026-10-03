@@ -21,9 +21,8 @@ export default async function LeaveTypesPage() {
       />
 
       <div className="alert alert-info ws-alert" role="note">
-        Leave entitlements, working-hour limits and overtime rates differ between Pakistan and the
-        UAE. Use the office list on a type to offer different entitlements per office, and confirm
-        the policies with your HR or legal advisor for each country.
+        Confirm leave entitlements, working-hour limits and overtime rates with your HR or legal
+        advisor.
       </div>
 
       <Panel>
@@ -45,55 +44,27 @@ export default async function LeaveTypesPage() {
             requiresDocument: t.requiresDocument,
             documentAfterDays: t.documentAfterDays ?? 0,
             minNoticeDays: t.minNoticeDays ?? 0,
-            offices: t.offices ?? [],
             active: t.active,
+            display: {
+              name: t.name + ' (' + t.code + ')',
+              paid: t.paid ? 'Paid' : 'Unpaid',
+              countsTowardQuota: t.countsTowardQuota ? 'Counts' : 'Does not count',
+              monthlyLimit: t.monthlyLimit == null ? 'None' : String(t.monthlyLimit),
+              requiresDocument: t.requiresDocument
+                ? t.documentAfterDays > 0
+                  ? 'After ' + t.documentAfterDays + ' days'
+                  : 'Always'
+                : 'Not needed',
+              active: t.active ? 'Active' : 'Retired',
+            },
           }))}
           columns={[
-            {
-              key: 'name',
-              label: 'Type',
-              render: (item) => (
-                <>
-                  <span
-                    className="ws-cal-dot me-2"
-                    style={{ background: item.color }}
-                    aria-hidden="true"
-                  />
-                  {item.name} ({item.code})
-                </>
-              ),
-            },
-            { key: 'paid', label: 'Paid', render: (item) => (item.paid ? 'Paid' : 'Unpaid') },
-            {
-              key: 'countsTowardQuota',
-              label: 'Quota',
-              render: (item) => (item.countsTowardQuota ? 'Counts' : 'Does not count'),
-            },
-            {
-              key: 'monthlyLimit',
-              label: 'Per-cycle limit',
-              render: (item) => (item.monthlyLimit === '' ? 'None' : String(item.monthlyLimit)),
-            },
-            {
-              key: 'requiresDocument',
-              label: 'Document',
-              render: (item) =>
-                item.requiresDocument
-                  ? item.documentAfterDays > 0
-                    ? 'After ' + item.documentAfterDays + ' days'
-                    : 'Always'
-                  : 'Not needed',
-            },
-            {
-              key: 'offices',
-              label: 'Offices',
-              render: (item) => (item.offices?.length ? item.offices.join(', ') : 'All'),
-            },
-            {
-              key: 'active',
-              label: 'Status',
-              render: (item) => (item.active ? 'Active' : 'Retired'),
-            },
+            { key: 'name', label: 'Type', swatch: 'color' },
+            { key: 'paid', label: 'Paid' },
+            { key: 'countsTowardQuota', label: 'Quota' },
+            { key: 'monthlyLimit', label: 'Per-cycle limit' },
+            { key: 'requiresDocument', label: 'Document' },
+            { key: 'active', label: 'Status' },
           ]}
           fields={[
             { name: 'name', label: 'Name', required: true, col: 'col-12 col-md-4' },
@@ -167,17 +138,6 @@ export default async function LeaveTypesPage() {
               max: '90',
               default: 0,
               col: 'col-6 col-md-3',
-            },
-            {
-              name: 'offices',
-              label: 'Offered at',
-              type: 'multiselect',
-              options: [
-                { value: 'ISLAMABAD', label: 'Islamabad' },
-                { value: 'DUBAI', label: 'Dubai' },
-              ],
-              hint: 'None selected means every office.',
-              col: 'col-12 col-md-3',
             },
             {
               name: 'active',

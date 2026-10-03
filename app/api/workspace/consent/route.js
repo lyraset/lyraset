@@ -13,7 +13,7 @@ const Schema = z.object({ acknowledged: z.literal(true) });
 
 /**
  * Record that the employee has seen what the portal collects — location, IP
- * and, where the office requires it, a photo at clock-in. Shown on first
+ * at each clock event. Shown on first
  * login; the timestamp is kept so the acknowledgment is auditable.
  */
 export const POST = api(async (req) => {

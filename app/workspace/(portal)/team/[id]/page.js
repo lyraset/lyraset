@@ -11,6 +11,7 @@ import { buildDayRange } from '@/lib/workspace/services/attendance';
 import { serializeEod } from '@/lib/workspace/services/eod';
 import { formatDuration, lateDeductionDays } from '@/lib/workspace/calc/attendance';
 import { remainingPaidLeave, formatDays } from '@/lib/workspace/calc/leave';
+import { TIMEZONE } from '@/lib/workspace/timezone';
 import { PageHead, Panel, Stat, Empty, formatDate } from '@/components/workspace/ui';
 import DrillDown from '@/components/workspace/DrillDown';
 
@@ -46,7 +47,7 @@ export default async function EmployeeDrillDown({ params, searchParams }) {
 
   const person = { ...found, id: String(found._id) };
   const ctx = await getWorkspaceContext();
-  const cycle = cycleFor(ctx, person, new Date());
+  const cycle = cycleFor(ctx, new Date());
   const from = typeof sp.from === 'string' ? sp.from : cycle.startDate;
   const to = typeof sp.to === 'string' ? sp.to : cycle.endDate;
 
@@ -67,7 +68,7 @@ export default async function EmployeeDrillDown({ params, searchParams }) {
         acc.lateMinutes += day.computed.lateByMinutes;
       }
       if (day.record?.clockIn) {
-        acc.inMinutes += minutesOfDay(day.record.clockIn, person.timezone);
+        acc.inMinutes += minutesOfDay(day.record.clockIn);
         acc.inDays += 1;
       }
       acc.workedMinutes += day.computed.workedMinutes;
@@ -161,7 +162,6 @@ export default async function EmployeeDrillDown({ params, searchParams }) {
         <DrillDown
           userId={person.id}
           userName={safe.name}
-          timezone={person.timezone}
           days={days.map((day) => ({
             ...day,
             eod: eodByDate.get(day.workDate) ?? null,
@@ -175,10 +175,10 @@ export default async function EmployeeDrillDown({ params, searchParams }) {
   );
 }
 
-/** Minutes past midnight of an instant, in a named zone. */
-function minutesOfDay(instant, timeZone) {
+/** Minutes past midnight of an instant, in Pakistan time. */
+function minutesOfDay(instant) {
   const text = new Date(instant).toLocaleTimeString('en-GB', {
-    timeZone,
+    timeZone: TIMEZONE,
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,

@@ -14,7 +14,6 @@ import User, {
   toSafeUser,
   toProfileUser,
   OFFICES,
-  OFFICE_TIMEZONES,
   WORK_MODES,
   EMPLOYMENT_TYPES,
   EXIT_TYPES,
@@ -171,11 +170,7 @@ export const PATCH = api(async (req, context) => {
   }
   if (data.exitType !== undefined) set.exitType = data.exitType ?? null;
 
-  if (data.office) {
-    set.office = data.office;
-    // The timezone is derived from the office, never entered by hand.
-    set.timezone = OFFICE_TIMEZONES[data.office];
-  }
+  if (data.office) set.office = data.office;
 
   if (data.departmentId !== undefined) {
     set.departmentId = data.departmentId ?? null;

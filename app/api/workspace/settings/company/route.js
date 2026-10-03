@@ -7,6 +7,7 @@ import { connectDB } from '@/lib/workspace/db';
 import Settings, { SINGLETON_KEY } from '@/models/workspace/Settings';
 import { ensureSettings, getWorkspaceContext } from '@/lib/workspace/context';
 import { getCycleForDate, getNextCycle } from '@/lib/workspace/calc/cycle';
+import { TIMEZONE } from '@/lib/workspace/timezone';
 import { logAudit } from '@/lib/workspace/audit';
 
 export const dynamic = 'force-dynamic';
@@ -39,8 +40,8 @@ export const GET = api(async () => {
   await requireApiPermission(P.SETTINGS_MANAGE);
   const settings = await ensureSettings();
   const ctx = await getWorkspaceContext();
-  const current = getCycleForDate(new Date(), ctx.cycleHistory, 'Asia/Karachi');
-  const next = getNextCycle(new Date(), ctx.cycleHistory, 'Asia/Karachi');
+  const current = getCycleForDate(new Date(), ctx.cycleHistory, TIMEZONE);
+  const next = getNextCycle(new Date(), ctx.cycleHistory, TIMEZONE);
 
   const { _id, __v, ...rest } = settings;
   return json({
@@ -77,7 +78,7 @@ export const PATCH = api(async (req) => {
     const currentDay = ctx.cycleHistory.at(-1)?.day ?? 1;
     if (cycleStartDay !== currentDay) {
       // Effective from the start of the next cycle under the current rule.
-      const next = getNextCycle(new Date(), ctx.cycleHistory, 'Asia/Karachi');
+      const next = getNextCycle(new Date(), ctx.cycleHistory, TIMEZONE);
       update.$push = { cycleStartHistory: { day: cycleStartDay, effectiveFrom: next.start } };
     }
   }

@@ -10,7 +10,16 @@ import Department from '@/models/workspace/Department';
 import { getWorkspaceContext } from '@/lib/workspace/context';
 import { serializeEod, missingEodsFor } from '@/lib/workspace/services/eod';
 import { formatDuration } from '@/lib/workspace/calc/attendance';
-import { PageHead, Panel, Empty, Person, TableWrap, formatDate } from '@/components/workspace/ui';
+import { todayInPakistan } from '@/lib/workspace/timezone';
+import {
+  PageHead,
+  Panel,
+  Empty,
+  Person,
+  TableWrap,
+  formatDate,
+  formatTime,
+} from '@/components/workspace/ui';
 import Filters from '@/components/workspace/Filters';
 
 export const dynamic = 'force-dynamic';
@@ -28,13 +37,12 @@ export default async function TeamEodPage({ searchParams }) {
   const sp = (await searchParams) ?? {};
 
   const ctx = await getWorkspaceContext();
-  const date = typeof sp.date === 'string' ? sp.date : new Date().toISOString().slice(0, 10);
+  const date = typeof sp.date === 'string' ? sp.date : todayInPakistan();
   const from = typeof sp.from === 'string' ? sp.from : date;
   const to = typeof sp.to === 'string' ? sp.to : date;
 
   await connectDB();
   const peopleQuery = { status: 'ACTIVE' };
-  if (typeof sp.office === 'string') peopleQuery.office = sp.office;
   if (typeof sp.departmentId === 'string') peopleQuery.departmentId = sp.departmentId;
 
   const people = await User.find(peopleQuery)
@@ -55,7 +63,7 @@ export default async function TeamEodPage({ searchParams }) {
       .lean(),
     Project.find({ active: true }).sort({ client: 1, name: 1 }).lean(),
     Department.find({ active: true }).sort({ name: 1 }).lean(),
-    missingEodsFor({ workDate: date, office: sp.office ?? null, ctx }),
+    missingEodsFor({ workDate: date, ctx }),
   ]);
 
   const hoursBy = new Map(
@@ -92,15 +100,6 @@ export default async function TeamEodPage({ searchParams }) {
           fields={[
             { name: 'from', label: 'From', type: 'date' },
             { name: 'to', label: 'To', type: 'date' },
-            {
-              name: 'office',
-              label: 'Office',
-              type: 'select',
-              options: [
-                { value: 'ISLAMABAD', label: 'Islamabad' },
-                { value: 'DUBAI', label: 'Dubai' },
-              ],
-            },
             {
               name: 'departmentId',
               label: 'Department',
@@ -192,7 +191,6 @@ export default async function TeamEodPage({ searchParams }) {
               <tr>
                 <th scope="col">Employee</th>
                 <th scope="col">Department</th>
-                <th scope="col">Office</th>
                 <th scope="col">Clocked in</th>
                 <th scope="col">Note</th>
               </tr>
@@ -206,15 +204,7 @@ export default async function TeamEodPage({ searchParams }) {
                     </Link>
                   </td>
                   <td className="ws-muted">{row.department ?? '—'}</td>
-                  <td className="ws-muted">{row.office}</td>
-                  <td className="ws-mono">
-                    {row.clockIn
-                      ? new Date(row.clockIn).toLocaleTimeString('en-GB', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })
-                      : '—'}
-                  </td>
+                  <td className="ws-mono">{formatTime(row.clockIn)}</td>
                   <td className="ws-muted">
                     {row.autoClosed ? 'Clocked out automatically' : 'Still owed'}
                   </td>

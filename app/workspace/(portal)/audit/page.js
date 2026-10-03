@@ -1,11 +1,13 @@
 import Link from 'next/link';
+import { DateTime } from 'luxon';
 import { requirePagePermission } from '@/lib/workspace/auth';
 import { P, ROLE_LABELS } from '@/lib/workspace/permissions';
 import { connectDB } from '@/lib/workspace/db';
 import AuditLog from '@/models/workspace/AuditLog';
 import User from '@/models/workspace/User';
 import { escapeRegex } from '@/lib/workspace/validation';
-import { PageHead, Panel, Empty, TableWrap } from '@/components/workspace/ui';
+import { TIMEZONE } from '@/lib/workspace/timezone';
+import { PageHead, Panel, Empty, TableWrap, formatDateTime } from '@/components/workspace/ui';
 import Filters from '@/components/workspace/Filters';
 
 export const dynamic = 'force-dynamic';
@@ -101,15 +103,7 @@ export default async function AuditPage({ searchParams }) {
                   const actor = entry.actorId ? byId.get(String(entry.actorId)) : null;
                   return (
                     <tr key={String(entry._id)}>
-                      <td className="ws-mono ws-muted">
-                        {new Date(entry.createdAt).toLocaleString('en-GB', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </td>
+                      <td className="ws-mono ws-muted">{formatDateTime(entry.createdAt)}</td>
                       <td>
                         {actor ? (
                           <>
@@ -194,8 +188,14 @@ function summarise(entry) {
 
 function normalise(value) {
   if (value == null) return 'none';
-  if (value instanceof Date) return value.toISOString().slice(0, 16).replace('T', ' ');
+  if (value instanceof Date) return pakistanStamp(value);
   if (typeof value === 'object') return JSON.stringify(value).slice(0, 40);
   const text = String(value);
-  return /^\d{4}-\d{2}-\d{2}T/.test(text) ? text.slice(0, 16).replace('T', ' ') : text;
+  return /^\d{4}-\d{2}-\d{2}T/.test(text) ? pakistanStamp(text) : text;
+}
+
+/** An instant as 'YYYY-MM-DD HH:mm' in Pakistan time. */
+function pakistanStamp(value) {
+  const dt = DateTime.fromJSDate(new Date(value), { zone: TIMEZONE });
+  return dt.isValid ? dt.toFormat('yyyy-MM-dd HH:mm') : String(value);
 }

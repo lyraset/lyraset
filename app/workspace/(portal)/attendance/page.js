@@ -13,7 +13,7 @@ import {
   TableWrap,
   Empty,
   formatDate,
-  formatTimeIn,
+  formatTime,
 } from '@/components/workspace/ui';
 import Filters from '@/components/workspace/Filters';
 
@@ -32,7 +32,7 @@ export default async function MyAttendancePage({ searchParams }) {
   const sp = (await searchParams) ?? {};
 
   const ctx = await getWorkspaceContext();
-  const cycle = cycleFor(ctx, user, new Date());
+  const cycle = cycleFor(ctx, new Date());
   const from = typeof sp.from === 'string' ? sp.from : cycle.startDate;
   const to = typeof sp.to === 'string' ? sp.to : cycle.endDate;
 
@@ -117,8 +117,8 @@ export default async function MyAttendancePage({ searchParams }) {
                   <td className="ws-mono ws-muted">
                     {day.schedule.working ? day.schedule.start + '–' + day.schedule.end : '—'}
                   </td>
-                  <td className="ws-mono">{formatTimeIn(day.record?.clockIn, user.timezone)}</td>
-                  <td className="ws-mono">{formatTimeIn(day.record?.clockOut, user.timezone)}</td>
+                  <td className="ws-mono">{formatTime(day.record?.clockIn)}</td>
+                  <td className="ws-mono">{formatTime(day.record?.clockOut)}</td>
                   <td className="ws-mono ws-num">{formatDuration(day.computed.workedMinutes)}</td>
                   <td className="ws-mono ws-num">{day.computed.breakMinutes || '—'}</td>
                   <td>

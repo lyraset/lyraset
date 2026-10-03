@@ -9,7 +9,7 @@
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { parseArgs } from 'node:util';
-import { User, OFFICE_TIMEZONES } from './workspace-models.mjs';
+import { User } from './workspace-models.mjs';
 import { ROLES } from '../lib/workspace/permissions.js';
 import { hashPassword, generatePassword } from '../lib/workspace/passwords.js';
 
@@ -20,7 +20,6 @@ const { values } = parseArgs({
     name: { type: 'string' },
     email: { type: 'string' },
     'employee-id': { type: 'string' },
-    office: { type: 'string', default: 'ISLAMABAD' },
     reset: { type: 'boolean', default: false },
   },
 });
@@ -69,8 +68,7 @@ async function main() {
     requiresAttendance: true,
     designation: 'Owner',
     department: 'Management',
-    office: values.office,
-    timezone: OFFICE_TIMEZONES[values.office] ?? 'Asia/Karachi',
+    office: 'ISLAMABAD',
     employmentType: 'PERMANENT',
   });
 

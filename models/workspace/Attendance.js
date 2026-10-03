@@ -19,15 +19,6 @@ export const OVERTIME_CATEGORIES = Object.freeze(['WEEKDAY', 'WEEKEND', 'HOLIDAY
  * impossible to turn into two records.
  */
 
-const AssetSchema = new mongoose.Schema(
-  {
-    publicId: { type: String, required: true },
-    resourceType: { type: String, default: 'image' },
-    format: { type: String, default: null },
-  },
-  { _id: false }
-);
-
 /** What was true about the device and network at a clock event. */
 const ClockMetaSchema = new mongoose.Schema(
   {
@@ -39,7 +30,6 @@ const ClockMetaSchema = new mongoose.Schema(
     distanceM: { type: Number, default: null },
     withinGeofence: { type: Boolean, default: null },
     withinIpAllowlist: { type: Boolean, default: null },
-    selfie: { type: AssetSchema, default: null },
     /** Given when clocking in outside the geofence; goes to approvals. */
     reason: { type: String, trim: true, maxlength: 400, default: null },
   },
@@ -62,7 +52,6 @@ const WorkspaceAttendanceSchema = new mongoose.Schema(
     /** Denormalised so reports and the payroll lock can filter without a join. */
     cycleKey: { type: String, default: null },
     office: { type: String, enum: OFFICES, default: 'ISLAMABAD' },
-    timezone: { type: String, default: 'Asia/Karachi' },
 
     clockIn: { type: Date, default: null },
     clockOut: { type: Date, default: null },

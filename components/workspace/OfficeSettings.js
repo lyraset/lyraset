@@ -5,12 +5,10 @@ import { useRouter } from 'next/navigation';
 import { apiPatch, issuesByField } from './api';
 
 /**
- * Per-office settings: the timezone every calculation for that office runs in,
- * the weekend, and the integrity checks applied at clock-in.
+ * Office settings: the weekend and the integrity checks applied at clock-in.
  *
- * Policy lives per office because Pakistan and the UAE differ on weekends,
- * working-hour limits and entitlements. The note at the bottom says so rather
- * than implying the portal knows either country's law.
+ * There is no timezone to choose. The office is in Pakistan and the whole
+ * portal runs on Pakistan time.
  */
 
 const WEEKDAYS = [
@@ -37,7 +35,6 @@ function OfficeCard({ office }) {
   const router = useRouter();
   const [form, setForm] = useState({
     name: office.name ?? office.code,
-    timezone: office.timezone ?? 'Asia/Karachi',
     weekendDays: office.weekendDays ?? [7],
     enforceIpAllowlist: Boolean(office.enforceIpAllowlist),
     ipAllowlist: (office.ipAllowlist ?? []).join('\n'),
@@ -45,7 +42,6 @@ function OfficeCard({ office }) {
     lat: office.geofence?.lat ?? '',
     lng: office.geofence?.lng ?? '',
     radiusM: office.geofence?.radiusM ?? 200,
-    selfieRequired: Boolean(office.selfieRequired),
     policyNote: office.policyNote ?? '',
   });
   const [saving, setSaving] = useState(false);
@@ -73,7 +69,6 @@ function OfficeCard({ office }) {
       await apiPatch('/api/workspace/settings/offices', {
         code: office.code,
         name: form.name,
-        timezone: form.timezone,
         weekendDays: form.weekendDays,
         enforceIpAllowlist: form.enforceIpAllowlist,
         ipAllowlist: form.ipAllowlist
@@ -86,7 +81,6 @@ function OfficeCard({ office }) {
           lng: form.lng === '' ? null : Number(form.lng),
           radiusM: Number(form.radiusM) || 200,
         },
-        selfieRequired: form.selfieRequired,
         policyNote: form.policyNote || null,
       });
       setSaved(true);
@@ -116,7 +110,7 @@ function OfficeCard({ office }) {
         )}
 
         <div className="row g-3">
-          <div className="col-12 col-md-4">
+          <div className="col-12 col-md-6">
             <label className="form-label ws-label" htmlFor={office.code + '-name'}>
               Display name
             </label>
@@ -128,25 +122,7 @@ function OfficeCard({ office }) {
             />
           </div>
 
-          <div className="col-12 col-md-4">
-            <label className="form-label ws-label" htmlFor={office.code + '-tz'}>
-              Timezone
-            </label>
-            <select
-              id={office.code + '-tz'}
-              className="form-select"
-              value={form.timezone}
-              onChange={(e) => set('timezone', e.target.value)}
-            >
-              <option value="Asia/Karachi">Asia/Karachi (Pakistan)</option>
-              <option value="Asia/Dubai">Asia/Dubai (UAE)</option>
-            </select>
-            <p className="form-text">
-              Every work date, lateness check and cycle for this office is measured here.
-            </p>
-          </div>
-
-          <div className="col-12 col-md-4">
+          <div className="col-12 col-md-6">
             <span className="form-label ws-label d-block">Weekend</span>
             <div className="d-flex flex-wrap gap-2">
               {WEEKDAYS.map((day) => (
@@ -261,25 +237,6 @@ function OfficeCard({ office }) {
               The phone&apos;s own accuracy estimate is added to the radius, so a vague GPS fix does
               not reject someone standing in the office.
             </p>
-          </div>
-
-          <div className="col-12">
-            <div className="form-check">
-              <input
-                id={office.code + '-selfie'}
-                type="checkbox"
-                className="form-check-input"
-                checked={form.selfieRequired}
-                onChange={(e) => set('selfieRequired', e.target.checked)}
-              />
-              <label className="form-check-label" htmlFor={office.code + '-selfie'}>
-                Require a photo at clock-in
-                <span className="d-block ws-muted" style={{ fontSize: '0.85rem' }}>
-                  Stored privately and opened only by the Owner. Employees are told about this on
-                  first login.
-                </span>
-              </label>
-            </div>
           </div>
 
           <div className="col-12">

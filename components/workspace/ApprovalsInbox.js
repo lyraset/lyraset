@@ -35,14 +35,16 @@ export default function ApprovalsInbox({ leaves, requests, filterType }) {
     setBusy(request.id);
     setError('');
     try {
+      // A request to cancel approved leave is decided as a cancellation:
+      // rejecting it keeps the leave, it does not reject the leave itself.
+      const cancelling = request.status === 'CANCEL_PENDING';
       const approvedDates =
-        decision === 'APPROVE' ? (dateSelection[request.id] ?? request.countedDates) : null;
+        decision === 'APPROVE' && !cancelling
+          ? (dateSelection[request.id] ?? request.countedDates)
+          : null;
       await apiPost('/api/workspace/leave/decide', {
         requestId: request.id,
-        decision:
-          decision === 'APPROVE' && request.status === 'CANCEL_PENDING'
-            ? 'APPROVE_CANCELLATION'
-            : decision,
+        decision: cancelling ? decision + '_CANCELLATION' : decision,
         approvedDates,
         comment: comments[request.id]?.trim() || null,
       });
@@ -174,6 +176,7 @@ export default function ApprovalsInbox({ leaves, requests, filterType }) {
                       ? 'Approve selected days'
                       : 'Approve leave'
                 }
+                rejectLabel={request.status === 'CANCEL_PENDING' ? 'Reject cancellation' : 'Reject'}
                 onApprove={() => decideLeave(request, 'APPROVE')}
                 onReject={() => decideLeave(request, 'REJECT')}
                 disableApprove={request.status !== 'CANCEL_PENDING' && selected.length === 0}
@@ -246,6 +249,7 @@ function Decision({
   comment,
   onComment,
   approveLabel,
+  rejectLabel = 'Reject',
   onApprove,
   onReject,
   disableApprove,
@@ -275,7 +279,7 @@ function Decision({
           {busy ? 'Working…' : approveLabel}
         </button>
         <button type="button" className="btn ws-btn-danger" onClick={onReject} disabled={busy}>
-          Reject
+          {rejectLabel}
         </button>
       </div>
     </div>

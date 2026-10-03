@@ -15,6 +15,7 @@
  */
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { DateTime } from 'luxon';
 import { fetchWithRetry, probeServer, signIn as httpSignIn } from './test-http.mjs';
 
 const BASE = process.env.WORKSPACE_TEST_URL || 'http://localhost:3000';
@@ -415,5 +416,48 @@ describe('signed-out visitors are sent to the login page', () => {
   test('the login page itself is public', { skip: skipUnlessUp() }, async () => {
     const res = await call(null, '/workspace/login');
     assert.equal(res.status, 200);
+  });
+
+  test(
+    'signing out still works once the session has expired',
+    { skip: skipUnlessUp() },
+    async () => {
+      // A stale cookie is what a browser holds after the session ran out. The
+      // sign-out form posts from the page, so the Origin is the portal's own.
+      const res = await fetchWithRetry(BASE + '/api/workspace/auth/logout', {
+        method: 'POST',
+        headers: { cookie: 'lyr_ws_session=expired', origin: BASE },
+        redirect: 'manual',
+      });
+      assert.equal(res.status, 303, 'a redirect, not a 401 error page');
+      assert.match(res.headers.get('location') ?? '', /\/workspace\/login$/);
+      assert.match(
+        res.headers.get('set-cookie') ?? '',
+        /lyr_ws_session=;/,
+        'the cookie is cleared'
+      );
+    }
+  );
+
+  test(
+    'a sign-out posted from another site is still refused',
+    { skip: skipUnlessUp() },
+    async () => {
+      const res = await fetchWithRetry(BASE + '/api/workspace/auth/logout', {
+        method: 'POST',
+        headers: { origin: 'https://evil.example' },
+        redirect: 'manual',
+      });
+      assert.equal(res.status, 403);
+    }
+  );
+});
+
+describe('"today" is Pakistan’s date', () => {
+  test('the team EOD feed defaults to today in Pakistan', { skip: skipUnlessUp() }, async () => {
+    const res = await call('md', '/api/workspace/eod/team');
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.equal(data.date, DateTime.now().setZone('Asia/Karachi').toISODate());
   });
 });

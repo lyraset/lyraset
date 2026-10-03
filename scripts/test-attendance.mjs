@@ -19,6 +19,7 @@ import {
   computeBreakMinutes,
   lateDeductionDays,
   autoCloseDeadline,
+  autoCloseAt,
   formatDuration,
   findHoliday,
   findLeave,
@@ -26,7 +27,6 @@ import {
 } from '../lib/workspace/calc/attendance.js';
 
 const KHI = 'Asia/Karachi';
-const DXB = 'Asia/Dubai';
 
 const STANDARD = {
   _id: 'shift-standard',
@@ -44,12 +44,11 @@ const STANDARD = {
   },
 };
 
-const ali = { id: 'u-ali', office: 'ISLAMABAD', timezone: KHI, shiftId: 'shift-standard' };
-const mahnoor = { id: 'u-mah', office: 'DUBAI', timezone: DXB, shiftId: 'shift-standard' };
+const ali = { id: 'u-ali', office: 'ISLAMABAD', shiftId: 'shift-standard' };
 
 const schedFor = (user, date) => getScheduleForDay({ user, date, shifts: [STANDARD] });
 
-/** Build an instant on a work date, in the user's zone. */
+/** Build an instant on a work date, in Pakistan time. */
 const at = (date, time, tz = KHI) => DateTime.fromISO(date + 'T' + time, { zone: tz }).toJSDate();
 
 /** Server "now" well after the shift has ended, so the day counts as finished. */
@@ -156,11 +155,11 @@ test('HOLIDAY: the calendar wins over the shift', () => {
   assert.equal(r.holidayName, 'Eid');
 });
 
-test('a holiday scoped to the other office does not apply', () => {
+test('a holiday listing the office applies to it', () => {
   const s = schedFor(ali, '2026-09-21');
-  const holidays = [{ date: '2026-09-21', name: 'UAE National Day', offices: ['DUBAI'] }];
+  const holidays = [{ date: '2026-09-21', name: 'Iqbal Day', offices: ['ISLAMABAD'] }];
   const r = run(s, null, { holidays, office: 'ISLAMABAD' });
-  assert.equal(r.status, STATUS.ABSENT);
+  assert.equal(r.status, STATUS.HOLIDAY);
 });
 
 test('ABSENT only once the shift has ended', () => {
@@ -304,19 +303,19 @@ test('a flexible shift is never late, only short', () => {
   assert.equal(r.status, STATUS.PRESENT);
 });
 
-test('Dubai lateness is judged in Dubai time, not in Islamabad time', () => {
-  const s = getScheduleForDay({ user: mahnoor, date: '2026-09-21', shifts: [STANDARD] });
-  assert.equal(s.tz, DXB);
-  // 10:20 Dubai is 11:20 in Karachi — late by 5 minutes locally, not by 65.
+test('lateness is judged in Pakistan time, from plain UTC instants', () => {
+  const s = schedFor(ali, '2026-09-21');
+  assert.equal(s.tz, KHI);
+  // 05:20 UTC is 10:20 in Pakistan: five minutes past the 15-minute grace.
   const r = computeDayStatus(
     s,
-    { clockIn: at('2026-09-21', '10:20', DXB), clockOut: at('2026-09-21', '19:00', DXB) },
-    [],
-    [],
     {
-      office: 'DUBAI',
-      now: afterWork('2026-09-21', DXB),
-    }
+      clockIn: new Date('2026-09-21T05:20:00Z'),
+      clockOut: new Date('2026-09-21T14:00:00Z'),
+    },
+    [],
+    [],
+    { office: 'ISLAMABAD', now: new Date('2026-09-21T18:30:00Z') }
   );
   assert.equal(r.status, STATUS.LATE);
   assert.equal(r.lateByMinutes, 5);
@@ -343,13 +342,56 @@ test('the auto-close deadline is the shift end plus the configured offset', () =
   assert.equal(autoCloseDeadline({ endAt: null }), null);
 });
 
+const RULES_4H = { ...DEFAULT_RULES, autoClockOutOffsetHours: 4 };
+const pk = (instant) => DateTime.fromJSDate(instant, { zone: KHI }).toFormat('yyyy-MM-dd HH:mm');
+
+test('auto-close: a session started during the shift closes at shift end plus the offset', () => {
+  const s = schedFor(ali, '2026-09-21');
+  assert.equal(pk(autoCloseAt(s, at('2026-09-21', '10:05'), RULES_4H)), '2026-09-21 23:00');
+  assert.equal(pk(autoCloseAt(s, at('2026-09-21', '18:59'), RULES_4H)), '2026-09-21 23:00');
+});
+
+test('auto-close: a clock-in after the shift ended is measured from the clock-in', () => {
+  // Weekday: the shift ends at 19:00, so the old rule closed at 23:00 — before this clock-in.
+  const monday = schedFor(ali, '2026-09-21');
+  assert.equal(pk(autoCloseAt(monday, at('2026-09-21', '23:30'), RULES_4H)), '2026-09-22 15:30');
+  assert.equal(pk(autoCloseAt(monday, at('2026-09-21', '19:00'), RULES_4H)), '2026-09-22 11:00');
+  // Saturday: the shift ends at 14:00, so the old rule closed at 18:00.
+  const saturday = schedFor(ali, '2026-09-26');
+  assert.equal(pk(autoCloseAt(saturday, at('2026-09-26', '18:30'), RULES_4H)), '2026-09-27 10:30');
+});
+
+test('auto-close: a day off is measured from the clock-in', () => {
+  const sunday = schedFor(ali, '2026-09-27');
+  assert.equal(sunday.working, false);
+  assert.equal(pk(autoCloseAt(sunday, at('2026-09-27', '11:00'), RULES_4H)), '2026-09-28 03:00');
+});
+
+test('auto-close never lands before the clock-in, at any time of day', () => {
+  for (const date of ['2026-09-21', '2026-09-25', '2026-09-26', '2026-09-27']) {
+    const s = schedFor(ali, date);
+    for (let minute = 0; minute < 24 * 60; minute += 15) {
+      const clockIn = DateTime.fromISO(date, { zone: KHI }).plus({ minutes: minute }).toJSDate();
+      const closeAt = autoCloseAt(s, clockIn, RULES_4H);
+      assert.ok(closeAt > clockIn, date + ' ' + pk(clockIn) + ' closes at ' + pk(closeAt));
+      // And the day it would record is never zero, which is what the bug saved.
+      const worked = computeWorkedMinutes({ clockIn, clockOut: closeAt, breaks: [] });
+      assert.ok(worked >= 60, pk(clockIn) + ' would record only ' + worked + ' minutes');
+    }
+  }
+});
+
+test('auto-close has nothing to measure without a clock-in', () => {
+  assert.equal(autoCloseAt(schedFor(ali, '2026-09-21'), null, RULES_4H), null);
+});
+
 test('holiday and leave lookups respect office and status', () => {
   assert.equal(
-    findHoliday([{ date: '2026-09-21', name: 'X', offices: [] }], '2026-09-21', 'DUBAI').name,
+    findHoliday([{ date: '2026-09-21', name: 'X', offices: [] }], '2026-09-21', 'ISLAMABAD').name,
     'X'
   );
   assert.equal(
-    findHoliday([{ date: '2026-09-22', name: 'X', offices: [] }], '2026-09-21', 'DUBAI'),
+    findHoliday([{ date: '2026-09-22', name: 'X', offices: [] }], '2026-09-21', 'ISLAMABAD'),
     null
   );
   assert.ok(

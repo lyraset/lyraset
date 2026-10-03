@@ -59,8 +59,6 @@ export const GET = api(async () => {
       return {
         code: o.code,
         name: o.name,
-        timezone: o.timezone,
-        selfieRequired: Boolean(o.selfieRequired),
         geofenceEnforced: Boolean(o.enforceGeofence),
         ipEnforced: Boolean(o.enforceIpAllowlist),
         policyNote: o.policyNote ?? null,

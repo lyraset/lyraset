@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiPatch, issuesByField } from './api';
+import { formatDate } from './ui';
 
 /**
  * Company-wide rules.
@@ -64,7 +65,7 @@ export default function CompanySettingsForm({ settings, currentCycle, nextCycle,
       setNotice(
         result.cycleChangeEffectiveFrom
           ? 'Saved. The new company month start day takes effect from ' +
-              new Date(result.cycleChangeEffectiveFrom).toISOString().slice(0, 10) +
+              formatDate(result.cycleChangeEffectiveFrom) +
               '. Cycles before then keep their original dates.'
           : 'Settings saved.'
       );

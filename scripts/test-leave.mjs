@@ -26,7 +26,7 @@ import {
 
 const TZ = 'Asia/Karachi';
 
-/** A Monday-to-Friday working week, as in the Dubai office. */
+/** A Monday-to-Friday working week, for a shift with Saturdays off. */
 const monToFri = (date) => {
   const wd = DateTime.fromISO(date, { zone: TZ }).weekday;
   return wd >= 1 && wd <= 5;

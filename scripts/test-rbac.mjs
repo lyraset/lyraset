@@ -163,6 +163,9 @@ test('unknown or missing role gets nothing', () => {
 test('route resolution is segment-aware and deny-by-default', () => {
   assert.deepEqual(resolveAccess('/workspace/login'), { type: 'public' });
   assert.deepEqual(resolveAccess('/api/workspace/auth/login'), { type: 'public' });
+  // Signing out must work after the session has already expired.
+  assert.deepEqual(resolveAccess('/api/workspace/auth/logout'), { type: 'public' });
+  assert.equal(isPathAllowed(null, '/api/workspace/auth/logout'), true);
   assert.deepEqual(resolveAccess('/api/workspace/employees'), { type: 'auth' });
   assert.deepEqual(resolveAccess('/workspace'), { type: 'auth' });
   assert.deepEqual(resolveAccess('/workspace/'), { type: 'auth' });

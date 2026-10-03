@@ -50,6 +50,8 @@ if (serverUp) {
   sessions.ceo = await signIn('DEMO-002', 'Demo@Ceo2026');
   sessions.md = await signIn('DEMO-003', 'Demo@Md2026');
   sessions.employee = await signIn('DEMO-101', 'Demo@Ali2026');
+  // Usman's leave is used only here, so these tests cannot collide with Ali's.
+  sessions.usman = await signIn('DEMO-103', 'Demo@Usman2026');
   db = await mongoose.connect(process.env.MONGODB_URI);
 }
 
@@ -62,9 +64,7 @@ async function resetToday(employeeId) {
   const users = mongoose.connection.collection('workspace_users');
   const user = await users.findOne({ employeeId });
   if (!user) return null;
-  const workDate = DateTime.now()
-    .setZone(user.timezone || 'Asia/Karachi')
-    .toISODate();
+  const workDate = DateTime.now().setZone('Asia/Karachi').toISODate();
   await mongoose.connection
     .collection('workspace_attendance')
     .deleteMany({ userId: user._id, workDate });
@@ -293,6 +293,171 @@ describe('a locked period is read-only for everyone', () => {
     await mongoose.connection
       .collection('workspace_payroll_periods')
       .deleteMany({ office: 'ISLAMABAD', cycleKey });
+  });
+});
+
+describe('cancelling leave that is already approved', () => {
+  const leaveRequests = () => mongoose.connection.collection('workspace_leave_requests');
+  const balances = () => mongoose.connection.collection('workspace_leave_balances');
+
+  test(
+    'rejecting a cancellation keeps the leave and the balance exactly as approved',
+    { skip: skip() },
+    async () => {
+      if (!db) return;
+      const usman = await mongoose.connection
+        .collection('workspace_users')
+        .findOne({ employeeId: 'DEMO-103' });
+      const types = await call('owner', '/api/workspace/settings/leave-types');
+      const casual = types.data.leaveTypes.find((t) => t.code === 'CL');
+
+      // Three weeks out, so the leave has not started and can be cancelled.
+      const date = nextWorkingDate(21);
+      await leaveRequests().deleteMany({ userId: usman._id, from: { $gte: nextWorkingDate(1) } });
+
+      const applied = await call('usman', '/api/workspace/leave', {
+        method: 'POST',
+        body: {
+          leaveTypeId: casual.id,
+          from: date,
+          to: date,
+          reason: 'Family wedding out of town.',
+        },
+      });
+      assert.equal(applied.status, 201, JSON.stringify(applied.data));
+      const id = applied.data.request.id;
+      const cycleKey = applied.data.request.cycleSplits[0].cycleKey;
+      const balance = () => balances().findOne({ userId: usman._id, cycleKey });
+
+      try {
+        const approved = await call('owner', '/api/workspace/leave/decide', {
+          method: 'POST',
+          body: { requestId: id, decision: 'APPROVE' },
+        });
+        assert.equal(approved.status, 200, JSON.stringify(approved.data));
+        assert.equal(approved.data.request.status, 'APPROVED');
+        const whenApproved = await balance();
+
+        const askToCancel = () =>
+          call('usman', '/api/workspace/leave/' + id, {
+            method: 'PATCH',
+            body: { action: 'CANCEL', reason: 'Plans changed.' },
+          });
+        const cancel = await askToCancel();
+        assert.equal(cancel.data.request.status, 'CANCEL_PENDING');
+
+        // This is what the Reject button used to send: it rejected the leave itself.
+        const plainReject = await call('owner', '/api/workspace/leave/decide', {
+          method: 'POST',
+          body: { requestId: id, decision: 'REJECT' },
+        });
+        assert.equal(plainReject.status, 409, 'a cancellation is not decided as an application');
+
+        const rejected = await call('owner', '/api/workspace/leave/decide', {
+          method: 'POST',
+          body: {
+            requestId: id,
+            decision: 'REJECT_CANCELLATION',
+            comment: 'We need you that day.',
+          },
+        });
+        assert.equal(rejected.status, 200, JSON.stringify(rejected.data));
+        assert.equal(rejected.data.request.status, 'APPROVED', 'the leave still stands');
+        assert.deepEqual(rejected.data.request.approvedDates, [date], 'with every day intact');
+
+        const afterReject = await balance();
+        assert.equal(afterReject.used, whenApproved.used, 'the used days are unchanged');
+        assert.equal(afterReject.pending, whenApproved.pending, 'nothing was released');
+        assert.ok(afterReject.pending >= 0, 'pending never goes negative');
+
+        const day = await call(
+          'owner',
+          '/api/workspace/attendance/history?userId=' +
+            String(usman._id) +
+            '&from=' +
+            date +
+            '&to=' +
+            date
+        );
+        assert.equal(day.data.days[0].status, 'ON_LEAVE', 'the day is still leave');
+
+        // Asked again and approved this time: the leave goes and the days come back.
+        await askToCancel();
+        const cancelled = await call('owner', '/api/workspace/leave/decide', {
+          method: 'POST',
+          body: { requestId: id, decision: 'APPROVE_CANCELLATION' },
+        });
+        assert.equal(cancelled.status, 200, JSON.stringify(cancelled.data));
+        assert.equal(cancelled.data.request.status, 'CANCELLED');
+        const afterCancel = await balance();
+        assert.equal(
+          afterCancel.used,
+          whenApproved.used - applied.data.request.paidDays,
+          'the paid days are returned'
+        );
+        assert.equal(afterCancel.pending, whenApproved.pending);
+      } finally {
+        await leaveRequests().deleteOne({ _id: new mongoose.Types.ObjectId(id) });
+      }
+    }
+  );
+
+  test('a cancellation inside a locked period cannot be approved', { skip: skip() }, async () => {
+    if (!db) return;
+    const usman = await mongoose.connection
+      .collection('workspace_users')
+      .findOne({ employeeId: 'DEMO-103' });
+    const types = await call('owner', '/api/workspace/settings/leave-types');
+    const casual = types.data.leaveTypes.find((t) => t.code === 'CL');
+
+    // The cycle before last is safely finished, so it can be locked.
+    const cycleKey = DateTime.now()
+      .setZone('Asia/Karachi')
+      .minus({ months: 2 })
+      .toFormat('yyyy-MM');
+    const date = cycleKey + '-15';
+    const periods = mongoose.connection.collection('workspace_payroll_periods');
+    await periods.deleteMany({ office: 'ISLAMABAD', cycleKey });
+
+    // A cancellation asked for before the period was locked, still undecided.
+    const { insertedId } = await leaveRequests().insertOne({
+      userId: usman._id,
+      leaveTypeId: new mongoose.Types.ObjectId(casual.id),
+      office: 'ISLAMABAD',
+      from: date,
+      to: date,
+      halfDay: false,
+      hours: null,
+      days: 1,
+      paidDays: 1,
+      unpaidDays: 0,
+      countedDates: [date],
+      approvedDates: [date],
+      cycleSplits: [{ cycleKey, days: 1, paidDays: 1, unpaidDays: 0, dates: [date] }],
+      reason: 'Locked-period test.',
+      status: 'CANCEL_PENDING',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    try {
+      const lock = await call('owner', '/api/workspace/payroll', {
+        method: 'POST',
+        body: { action: 'LOCK', office: 'ISLAMABAD', cycleKey },
+      });
+      assert.equal(lock.status, 200, JSON.stringify(lock.data));
+
+      const approve = await call('owner', '/api/workspace/leave/decide', {
+        method: 'POST',
+        body: { requestId: String(insertedId), decision: 'APPROVE_CANCELLATION' },
+      });
+      assert.equal(approve.status, 423, 'a locked period refuses the cancellation');
+      const stored = await leaveRequests().findOne({ _id: insertedId });
+      assert.equal(stored.status, 'CANCEL_PENDING', 'and the leave is untouched');
+    } finally {
+      await leaveRequests().deleteOne({ _id: insertedId });
+      await periods.deleteMany({ office: 'ISLAMABAD', cycleKey });
+    }
   });
 });
 

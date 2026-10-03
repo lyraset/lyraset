@@ -20,7 +20,8 @@ export default async function PayrollClosePage({ searchParams }) {
   await requirePagePermission(P.PAYROLL_LOCK);
   const sp = (await searchParams) ?? {};
 
-  const office = typeof sp.office === 'string' ? sp.office : 'ISLAMABAD';
+  // The one office. Payroll periods are still stored per office code.
+  const office = 'ISLAMABAD';
   const cycleKey = typeof sp.cycleKey === 'string' ? sp.cycleKey : undefined;
 
   const periods = await listPeriods({ office });
@@ -57,16 +58,6 @@ export default async function PayrollClosePage({ searchParams }) {
         <Filters
           fields={[
             {
-              name: 'office',
-              label: 'Office',
-              type: 'select',
-              placeholder: 'Islamabad',
-              options: [
-                { value: 'ISLAMABAD', label: 'Islamabad' },
-                { value: 'DUBAI', label: 'Dubai' },
-              ],
-            },
-            {
               name: 'cycleKey',
               label: 'Cycle',
               type: 'select',
@@ -86,9 +77,7 @@ export default async function PayrollClosePage({ searchParams }) {
         )}
 
         {summary && summary.rows.length === 0 && (
-          <Empty title="No one to summarise for this cycle">
-            Pick a different cycle or office.
-          </Empty>
+          <Empty title="No one to summarise for this cycle">Pick a different cycle.</Empty>
         )}
 
         {summary && summary.rows.length > 0 && (

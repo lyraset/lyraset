@@ -64,7 +64,7 @@ $env:WORKSPACE_ALLOW_SEED="true"; npm run seed:workspace -- --with-history
 WORKSPACE_ALLOW_SEED=true npm run seed:workspace -- --with-history
 ```
 
-This creates the two offices with their own weekends, six departments, the
+This creates the office (Islamabad), six departments, the
 standard shift, three leave types, five projects, company settings, and seven
 accounts. `--with-history` adds about thirty days of attendance, EODs, leave
 and requests so the reports and dashboards have something to show. It is
@@ -78,7 +78,7 @@ deterministic, so re-seeding reproduces the same history.
 | Employee (Web Dev, Islamabad, office)     | Ali Raza         | `DEMO-101`  | `Demo@Ali2026`     | Yes       |
 | Employee (Performance, Islamabad, hybrid) | Ayesha Khan      | `DEMO-102`  | `Demo@Ayesha2026`  | Yes       |
 | Employee (SEO, Islamabad, remote)         | Usman Tariq      | `DEMO-103`  | `Demo@Usman2026`   | Yes       |
-| Employee (Content, Dubai, office)         | Mahnoor Siddiqui | `DEMO-104`  | `Demo@Mahnoor2026` | Yes       |
+| Employee (Content, Islamabad, office)     | Mahnoor Siddiqui | `DEMO-104`  | `Demo@Mahnoor2026` | Yes       |
 
 Sign in at `/workspace/login` with the Employee ID or the email.
 
@@ -187,13 +187,21 @@ point at something real. Editing an EOD keeps the previous text.
 every dated write, so the lock is enforced at the data layer rather than by
 each route remembering. The Owner cannot edit through it either.
 
-### Timezones
+### Pakistan time
 
-Every timestamp is stored in UTC. Every calculation runs in the employee's
-office timezone — `Asia/Karachi` for Islamabad, `Asia/Dubai` for Dubai — which
-is derived from the office and cannot be set by hand. A `workDate` is a plain
-`YYYY-MM-DD` string, not a `Date`, because it is a calendar label: storing it
-as an instant would make "which day was this?" depend on who is reading.
+The office is in Pakistan, so the whole portal runs on Pakistan time
+(`Asia/Karachi`), for everyone. The zone is one constant, `TIMEZONE` in
+`lib/workspace/timezone.js`; there is no per-person or per-office timezone to
+set. Every timestamp is stored in UTC, and every work date, lateness check,
+cycle boundary and displayed time is worked out in Pakistan time — never in the
+server's zone (UTC on Vercel) or the viewer's browser zone, which disagree with
+Pakistan about what "today" is between midnight and 05:00. Use
+`todayInPakistan()` for today's date and `formatTime` / `formatDate` /
+`formatDateTime` from `components/workspace/ui.js` for anything shown on screen.
+
+A `workDate` is a plain `YYYY-MM-DD` string, not a `Date`, because it is a
+calendar label: storing it as an instant would make "which day was this?"
+depend on who is reading.
 
 ### The EOD and the clock-out are one action
 
@@ -274,8 +282,7 @@ granting someone access.
 
 ## Legal note
 
-Leave entitlements, working-hour limits and overtime rates differ between
-Pakistan and the UAE. The portal supports per-office policy — weekends, leave
-types, quotas — but it does not encode either country's law and makes no claim
-to. Confirm the policies with your HR or legal advisor for each office. The
-settings pages carry the same note where it matters.
+The portal lets the Owner set the weekend, leave types and quotas, but it does
+not encode Pakistan's labour law and makes no claim to. Confirm leave
+entitlements, working-hour limits and overtime rates with your HR or legal
+advisor. The settings pages carry the same note where it matters.

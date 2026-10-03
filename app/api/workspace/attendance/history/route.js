@@ -43,7 +43,7 @@ export const GET = api(async (req) => {
   }
 
   const ctx = await getWorkspaceContext();
-  const cycle = cycleFor(ctx, target, new Date());
+  const cycle = cycleFor(ctx, new Date());
   const days = await buildDayRange({
     user: target,
     fromDate: from ?? cycle.startDate,

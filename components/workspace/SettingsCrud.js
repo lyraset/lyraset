@@ -98,7 +98,14 @@ export default function SettingsCrud({
               <tr key={item.id} style={item.active === false ? { opacity: 0.55 } : undefined}>
                 {columns.map((column) => (
                   <td key={column.key} className={column.wrap ? 'ws-wrap' : undefined}>
-                    {column.render ? column.render(item) : String(item[column.key] ?? '—')}
+                    {column.swatch && (
+                      <span
+                        className="ws-cal-dot me-2"
+                        style={{ background: item[column.swatch] }}
+                        aria-hidden="true"
+                      />
+                    )}
+                    {cellText(item, column)}
                   </td>
                 ))}
                 <td>
@@ -259,6 +266,16 @@ function FieldInput({ field, value, onChange, error }) {
       {error && <p className="ws-field-error">{error}</p>}
     </div>
   );
+}
+
+/**
+ * What a cell shows. The pages are server components, and a function cannot
+ * be handed to this client component, so a page that wants a friendlier label
+ * than the raw value puts the text in `item.display[key]` instead.
+ */
+function cellText(item, column) {
+  const value = item.display?.[column.key] ?? item[column.key];
+  return value === '' || value == null ? '—' : String(value);
 }
 
 function defaults(fields) {

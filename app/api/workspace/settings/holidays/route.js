@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import Holiday from '@/models/workspace/Holiday';
-import User from '@/models/workspace/User';
+import User, { OFFICES } from '@/models/workspace/User';
 import { settingsCollection, baseTransform } from '@/lib/workspace/services/settings';
 import { api, json, readJson } from '@/lib/workspace/route';
 import { parseBody, dateString, office } from '@/lib/workspace/validation';
@@ -55,7 +55,7 @@ export const POST = api(async (req) => {
   // The cached context predates this holiday, so add it for the recompute.
   ctx.holidays.push(created.toObject());
 
-  const affectedOffices = data.offices?.length ? data.offices : ['ISLAMABAD', 'DUBAI'];
+  const affectedOffices = data.offices?.length ? data.offices : OFFICES;
   const people = await User.find({ status: 'ACTIVE', office: { $in: affectedOffices } }).lean();
 
   let recomputed = 0;

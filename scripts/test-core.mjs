@@ -60,8 +60,7 @@ describe('clock in, seniors see it; clock out, the shift is saved and seniors se
     const eods = mongoose.connection.collection('workspace_eods');
 
     const ayesha = await users.findOne({ employeeId: 'DEMO-102' });
-    const tz = ayesha.timezone;
-    const workDate = DateTime.now().setZone(tz).toISODate();
+    const workDate = DateTime.now().setZone('Asia/Karachi').toISODate();
 
     await attendance.deleteMany({ userId: ayesha._id, workDate });
     await eods.deleteMany({ userId: ayesha._id, workDate });
@@ -86,7 +85,11 @@ describe('clock in, seniors see it; clock out, the shift is saved and seniors se
           clockedInAt.getTime(),
           role + ' sees the exact clock-in time'
         );
-        assert.ok(row.localClockIn, role + ' sees it in Ayesha’s local time');
+        assert.equal(
+          row.localClockIn,
+          DateTime.fromJSDate(clockedInAt, { zone: 'Asia/Karachi' }).toFormat('HH:mm'),
+          role + ' sees it in Pakistan time'
+        );
         assert.equal(row.clockOut, null, role + ' sees she has not clocked out yet');
 
         const live = await call(role, '/api/workspace/attendance/live');
@@ -136,7 +139,11 @@ describe('clock in, seniors see it; clock out, the shift is saved and seniors se
           role + ' sees the exact clock-out time'
         );
         assert.equal(row.workedMinutes, saved.workedMinutes, role + ' sees the saved shift length');
-        assert.ok(row.localClockOut, role + ' sees it in Ayesha’s local time');
+        assert.equal(
+          row.localClockOut,
+          DateTime.fromJSDate(saved.clockOut, { zone: 'Asia/Karachi' }).toFormat('HH:mm'),
+          role + ' sees it in Pakistan time'
+        );
 
         // And the same numbers in her day-by-day history.
         const history = await call(

@@ -52,6 +52,8 @@ const attendance = () => mongoose.connection.collection('workspace_attendance');
 const balances = () => mongoose.connection.collection('workspace_leave_balances');
 const settingsCol = () => mongoose.connection.collection('workspace_settings');
 
+const PK = 'Asia/Karachi';
+
 /** A recent past date that is a working day under the seeded shift (Sun is off). */
 function pastWorkingDate(tz, back) {
   let cursor = DateTime.now().setZone(tz).minus({ days: back });
@@ -66,8 +68,7 @@ describe('absences appear without the marking job ever running', () => {
     async () => {
       if (!db) return;
       const user = await users().findOne({ employeeId: 'DEMO-101' });
-      const tz = user.timezone;
-      const workDate = pastWorkingDate(tz, 3);
+      const workDate = pastWorkingDate(PK, 3);
 
       // No attendance row at all, and no leave: exactly the state the nightly
       // job would have written into.
@@ -99,17 +100,35 @@ describe('absences appear without the marking job ever running', () => {
     }
   );
 
-  test('a day still running is not an absence', { skip: skip() }, async () => {
+  test('a day that has not ended is not an absence', { skip: skip() }, async () => {
     if (!db) return;
     const user = await users().findOne({ employeeId: 'DEMO-101' });
-    const today = DateTime.now().setZone(user.timezone).toISODate();
+    const now = DateTime.now().setZone(PK);
+    const today = now.toISODate();
     await attendance().deleteMany({ userId: user._id, workDate: today });
 
     const history = await call(
       'employee',
       '/api/workspace/attendance/history?from=' + today + '&to=' + today
     );
-    assert.notEqual(history.data.days[0].status, 'ABSENT', 'today is never retroactively absent');
+    const day = history.data.days[0];
+    // Today is only still running before its shift ends. Once the shift is
+    // over, a day with no clock-in is an absence, as it should be — so what
+    // this checks depends on when the suite runs.
+    if (day.schedule.working && now.toFormat('HH:mm') < day.schedule.end) {
+      assert.notEqual(day.status, 'ABSENT', 'today is not absent while its shift is running');
+    }
+
+    // A working day still to come is never absent, whatever the time.
+    let ahead = now.plus({ days: 1 });
+    while (ahead.weekday === 7) ahead = ahead.plus({ days: 1 });
+    const upcoming = ahead.toISODate();
+    await attendance().deleteMany({ userId: user._id, workDate: upcoming });
+    const future = await call(
+      'employee',
+      '/api/workspace/attendance/history?from=' + upcoming + '&to=' + upcoming
+    );
+    assert.notEqual(future.data.days[0].status, 'ABSENT', 'a day not yet worked is not absent');
   });
 });
 
@@ -117,7 +136,7 @@ describe('a stale session is closed by a page load, not by a job', () => {
   test('loading the dashboard closes yesterday and flags it', { skip: skip() }, async () => {
     if (!db) return;
     const user = await users().findOne({ employeeId: 'DEMO-101' });
-    const tz = user.timezone;
+    const tz = PK;
     const workDate = pastWorkingDate(tz, 2);
 
     await attendance().deleteMany({ userId: user._id, workDate });
@@ -128,7 +147,6 @@ describe('a stale session is closed by a page load, not by a job', () => {
       userId: user._id,
       workDate,
       office: user.office,
-      timezone: tz,
       clockIn: DateTime.fromISO(workDate + 'T10:05', { zone: tz }).toJSDate(),
       clockOut: null,
       breaks: [],

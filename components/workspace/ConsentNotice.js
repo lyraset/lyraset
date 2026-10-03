@@ -36,7 +36,6 @@ export default function ConsentNotice({ office }) {
     office?.geofenceEnforced
       ? 'your location at clock-in, if you allow it, to confirm you are at the office'
       : 'your location at clock-in, if you allow it',
-    office?.selfieRequired ? 'a photo taken when you clock in at this office' : null,
   ].filter(Boolean);
 
   return (
@@ -53,8 +52,8 @@ export default function ConsentNotice({ office }) {
         ))}
       </ul>
       <p className="ws-muted">
-        Photos and HR documents are stored privately and are only opened by the Owner. Nothing here
-        is shared outside LYRASET.
+        HR documents are stored privately and are only opened by the Owner. Nothing here is shared
+        outside LYRASET.
       </p>
 
       {error && (

@@ -22,8 +22,8 @@ const Schema = z.object({
   requiresDocument: z.boolean().default(false),
   documentAfterDays: z.coerce.number().int().min(0).max(60).default(0),
   minNoticeDays: z.coerce.number().int().min(0).max(90).default(0),
-  // An empty list means the type is offered at every office, which is what
-  // lets Pakistan and the UAE keep different entitlements.
+  // An empty list means the type is offered at every office. There is one
+  // office, so the settings form no longer shows this.
   offices: z.array(office).default([]),
   active: z.boolean().default(true),
 });

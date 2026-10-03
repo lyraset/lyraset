@@ -2,20 +2,15 @@ import mongoose from 'mongoose';
 import { OFFICES } from './User.js';
 
 /**
- * One document per office. Holds the timezone every calculation for that
- * office runs in, plus the integrity checks applied at clock-in.
- *
- * Pakistan and the UAE differ on weekends, working-hour limits and leave
- * entitlements, so policy lives per office rather than company-wide. The
- * settings UI carries a note telling the Owner to confirm each with their
- * HR/legal advisor.
+ * The office, in Pakistan: its weekend and the integrity checks applied at
+ * clock-in. There is no timezone here — the whole portal runs on Pakistan
+ * time (lib/workspace/timezone.js).
  */
 
 const WorkspaceOfficeSchema = new mongoose.Schema(
   {
     code: { type: String, enum: OFFICES, required: true, unique: true },
     name: { type: String, required: true, trim: true, maxlength: 80 },
-    timezone: { type: String, required: true, default: 'Asia/Karachi' },
     /** Luxon weekday numbers: 1 Monday to 7 Sunday. */
     weekendDays: { type: [Number], default: [7] },
 
@@ -28,8 +23,6 @@ const WorkspaceOfficeSchema = new mongoose.Schema(
       lng: { type: Number, default: null },
       radiusM: { type: Number, default: 200, min: 20, max: 20000 },
     },
-    selfieRequired: { type: Boolean, default: false },
-
     policyNote: { type: String, trim: true, maxlength: 2000, default: null },
     active: { type: Boolean, default: true },
     isSeedData: { type: Boolean, default: false },

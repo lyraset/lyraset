@@ -34,7 +34,7 @@ export const GET = api(async (req) => {
   const filters = parseQuery(ListSchema, query(req));
 
   const ctx = await getWorkspaceContext();
-  const cycle = cycleFor(ctx, user, new Date());
+  const cycle = cycleFor(ctx, new Date());
   const from = filters.from ?? cycle.startDate;
   const to = filters.to ?? cycle.endDate;
 

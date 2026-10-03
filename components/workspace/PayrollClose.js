@@ -62,7 +62,7 @@ export default function PayrollClose({ office, periods }) {
         </div>
       )}
 
-      <TableWrap label={'Payroll periods for ' + office}>
+      <TableWrap label="Payroll periods">
         <thead>
           <tr>
             <th scope="col">Cycle</th>
@@ -136,7 +136,7 @@ export default function PayrollClose({ office, periods }) {
           >
             <div className="ws-modal-head">
               <h2 className="ws-modal-title" id="ws-unlock-title">
-                Unlock {unlocking} for {office}
+                Unlock {unlocking}
               </h2>
             </div>
             <form onSubmit={unlock}>

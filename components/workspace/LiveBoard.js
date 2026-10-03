@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiGet } from './api';
-import { Person, TableWrap, Empty } from './ui';
+import { Person, TableWrap, Empty, formatTime } from './ui';
 import { formatDuration } from '@/lib/workspace/calc/attendance';
 
 /**
@@ -99,7 +99,6 @@ export default function LiveBoard({ initial = null, canDrillDown = false }) {
           <thead>
             <tr>
               <th scope="col">Employee</th>
-              <th scope="col">Office</th>
               <th scope="col">Shift</th>
               <th scope="col">In</th>
               <th scope="col">Worked</th>
@@ -118,7 +117,6 @@ export default function LiveBoard({ initial = null, canDrillDown = false }) {
                     <Person name={row.name} meta={row.designation ?? row.department} />
                   )}
                 </td>
-                <td className="ws-muted">{row.office}</td>
                 <td className="ws-mono ws-muted">
                   {row.shift ? row.shift.start + '–' + row.shift.end : '—'}
                 </td>
@@ -142,12 +140,7 @@ export default function LiveBoard({ initial = null, canDrillDown = false }) {
 
       {data?.refreshedAt && (
         <p className="ws-faint mt-2 mb-0" style={{ fontSize: '0.8rem' }}>
-          Updated{' '}
-          {new Date(data.refreshedAt).toLocaleTimeString('en-GB', {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-          . Refreshes every minute.
+          Updated {formatTime(data.refreshedAt)}. Refreshes every minute.
         </p>
       )}
     </>

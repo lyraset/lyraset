@@ -1,8 +1,8 @@
 import mongoose from 'mongoose';
 import { ROLES } from '../../lib/workspace/permissions.js';
 
-export const OFFICES = Object.freeze(['ISLAMABAD', 'DUBAI']);
-export const OFFICE_TIMEZONES = Object.freeze({ ISLAMABAD: 'Asia/Karachi', DUBAI: 'Asia/Dubai' });
+/** The one office, in Pakistan. Every time in the portal is Pakistan time (lib/workspace/timezone.js). */
+export const OFFICES = Object.freeze(['ISLAMABAD']);
 export const WORK_MODES = Object.freeze(['OFFICE', 'HYBRID', 'REMOTE']);
 export const EMPLOYMENT_TYPES = Object.freeze(['PERMANENT', 'PROBATION', 'CONTRACT', 'INTERN']);
 export const USER_STATUS = Object.freeze(['ACTIVE', 'INACTIVE']);
@@ -71,7 +71,6 @@ const WorkspaceUserSchema = new mongoose.Schema(
     departmentId: { type: ObjectId, ref: 'WorkspaceDepartment', default: null },
     managerId: { type: ObjectId, ref: 'WorkspaceUser', default: null },
     office: { type: String, enum: OFFICES, default: 'ISLAMABAD' },
-    timezone: { type: String, default: 'Asia/Karachi' },
     workMode: { type: String, enum: WORK_MODES, default: 'OFFICE' },
     employmentType: { type: String, enum: EMPLOYMENT_TYPES, default: 'PROBATION' },
     joiningDate: { type: Date },
@@ -87,7 +86,7 @@ const WorkspaceUserSchema = new mongoose.Schema(
     // ---- HR documents (Owner only) ----
     documents: { type: [DocumentSchema], default: [] },
 
-    // ---- Consent to monitoring (location, IP, selfie) ----
+    // ---- Consent to monitoring (location and IP at clock-in) ----
     consentAcknowledgedAt: { type: Date, default: null },
 
     // ---- Security ----
@@ -138,7 +137,6 @@ export function toSafeUser(user) {
     departmentId: u.departmentId ? String(u.departmentId) : null,
     managerId: u.managerId ? String(u.managerId) : null,
     office: u.office,
-    timezone: u.timezone,
     workMode: u.workMode,
     employmentType: u.employmentType,
     joiningDate: u.joiningDate ?? null,

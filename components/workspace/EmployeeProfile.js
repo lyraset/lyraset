@@ -37,7 +37,6 @@ export default function EmployeeProfile({
     role: profile.role,
     designation: profile.designation ?? '',
     departmentId: profile.departmentId ?? '',
-    office: profile.office,
     workMode: profile.workMode,
     employmentType: profile.employmentType,
     joiningDate: dateInput(profile.joiningDate),
@@ -79,7 +78,6 @@ export default function EmployeeProfile({
         role: form.role,
         designation: form.designation || null,
         departmentId: form.departmentId || null,
-        office: form.office,
         workMode: form.workMode,
         employmentType: form.employmentType,
         joiningDate: form.joiningDate || null,
@@ -291,7 +289,7 @@ export default function EmployeeProfile({
               errors={fieldErrors}
             />
             <Select
-              col="col-12 col-md-4"
+              col="col-12 col-md-6"
               label="Department"
               name="departmentId"
               value={form.departmentId}
@@ -302,18 +300,7 @@ export default function EmployeeProfile({
               ]}
             />
             <Select
-              col="col-12 col-md-4"
-              label="Office"
-              name="office"
-              value={form.office}
-              set={set}
-              options={[
-                { value: 'ISLAMABAD', label: 'Islamabad' },
-                { value: 'DUBAI', label: 'Dubai' },
-              ]}
-            />
-            <Select
-              col="col-12 col-md-4"
+              col="col-12 col-md-6"
               label="Work mode"
               name="workMode"
               value={form.workMode}

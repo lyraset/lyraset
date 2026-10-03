@@ -2,6 +2,7 @@ import { requirePagePermission } from '@/lib/workspace/auth';
 import { P } from '@/lib/workspace/permissions';
 import { ensureSettings, getWorkspaceContext } from '@/lib/workspace/context';
 import { getCycleForDate, getNextCycle } from '@/lib/workspace/calc/cycle';
+import { TIMEZONE } from '@/lib/workspace/timezone';
 import { PageHead, Panel, formatDate } from '@/components/workspace/ui';
 import CompanySettingsForm from '@/components/workspace/CompanySettingsForm';
 
@@ -14,8 +15,8 @@ export default async function CompanySettingsPage() {
   const settings = await ensureSettings();
   const ctx = await getWorkspaceContext();
   const now = new Date();
-  const currentCycle = getCycleForDate(now, ctx.cycleHistory, 'Asia/Karachi');
-  const nextCycle = getNextCycle(now, ctx.cycleHistory, 'Asia/Karachi');
+  const currentCycle = getCycleForDate(now, ctx.cycleHistory, TIMEZONE);
+  const nextCycle = getNextCycle(now, ctx.cycleHistory, TIMEZONE);
   const history = ctx.cycleHistory ?? [];
 
   return (

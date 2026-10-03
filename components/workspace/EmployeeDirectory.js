@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { apiPost, issuesByField } from './api';
+import { todayInPakistan } from '@/lib/workspace/timezone';
 import { Person, TableWrap, Empty, formatDate } from './ui';
 
 /**
@@ -39,7 +40,6 @@ export default function EmployeeDirectory({ users, departments, shifts }) {
               <th scope="col">Employee</th>
               <th scope="col">Role</th>
               <th scope="col">Department</th>
-              <th scope="col">Office</th>
               <th scope="col">Work mode</th>
               <th scope="col">Joined</th>
               <th scope="col">Status</th>
@@ -55,7 +55,6 @@ export default function EmployeeDirectory({ users, departments, shifts }) {
                 </td>
                 <td className="ws-muted">{person.roleLabel}</td>
                 <td className="ws-muted">{person.department ?? '—'}</td>
-                <td className="ws-muted">{person.office}</td>
                 <td className="ws-muted">{titleCase(person.workMode)}</td>
                 <td className="ws-muted">{formatDate(person.joiningDate)}</td>
                 <td>
@@ -104,10 +103,9 @@ function CreateEmployeeDialog({ departments, shifts, onClose, onCreated }) {
     role: 'EMPLOYEE',
     designation: '',
     departmentId: '',
-    office: 'ISLAMABAD',
     workMode: 'OFFICE',
     employmentType: 'PROBATION',
-    joiningDate: new Date().toISOString().slice(0, 10),
+    joiningDate: todayInPakistan(),
     shiftId: shifts[0]?.id ?? '',
     phone: '',
     password: '',
@@ -221,21 +219,10 @@ function CreateEmployeeDialog({ departments, shifts, onClose, onCreated }) {
                 name="departmentId"
                 value={form.departmentId}
                 onChange={set}
-                col="col-12 col-md-4"
+                col="col-12 col-md-6"
                 options={[
                   { value: '', label: 'None' },
                   ...departments.map((d) => ({ value: d.id, label: d.name })),
-                ]}
-              />
-              <Select
-                label="Office"
-                name="office"
-                value={form.office}
-                onChange={set}
-                col="col-12 col-md-4"
-                options={[
-                  { value: 'ISLAMABAD', label: 'Islamabad' },
-                  { value: 'DUBAI', label: 'Dubai' },
                 ]}
               />
               <Select
@@ -243,7 +230,7 @@ function CreateEmployeeDialog({ departments, shifts, onClose, onCreated }) {
                 name="workMode"
                 value={form.workMode}
                 onChange={set}
-                col="col-12 col-md-4"
+                col="col-12 col-md-6"
                 options={[
                   { value: 'OFFICE', label: 'Office' },
                   { value: 'HYBRID', label: 'Hybrid' },

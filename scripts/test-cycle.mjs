@@ -158,14 +158,15 @@ test('cycleDates lists every day in the cycle', () => {
   assert.equal(dates.at(-1), '2026-09-25');
 });
 
-test('the Dubai and Islamabad cycles are computed in their own zones', () => {
+test('a cycle starts at midnight in Pakistan, not at midnight UTC', () => {
   const history = from(1, '2020-01-01');
-  const khi = getCycleForDate('2026-09-15', history, 'Asia/Karachi');
-  const dxb = getCycleForDate('2026-09-15', history, 'Asia/Dubai');
-  assert.deepEqual(bounds(khi), ['2026-09-01', '2026-09-30']);
-  assert.deepEqual(bounds(dxb), ['2026-09-01', '2026-09-30']);
-  // Same labels, different absolute instants: Dubai is an hour behind Karachi.
-  assert.notEqual(khi.start.getTime(), dxb.start.getTime());
+  const cycle = getCycleForDate('2026-09-15', history, 'Asia/Karachi');
+  assert.deepEqual(bounds(cycle), ['2026-09-01', '2026-09-30']);
+  // Midnight in Pakistan (UTC+5) is 19:00 UTC the evening before.
+  assert.equal(cycle.start.toISOString(), '2026-08-31T19:00:00.000Z');
+  // So 23:00 UTC on 30 September is already 1 October there: the next cycle.
+  const next = getCycleForDate(new Date('2026-09-30T23:00:00Z'), history, 'Asia/Karachi');
+  assert.deepEqual(bounds(next), ['2026-10-01', '2026-10-31']);
 });
 
 test('the start day is clamped to 1..28', () => {

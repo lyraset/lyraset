@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiPost, uploadPrivateFile, issuesByField } from './api';
+import { todayInPakistan } from '@/lib/workspace/timezone';
 
 /**
  * The leave application.
@@ -13,7 +14,7 @@ import { apiPost, uploadPrivateFile, issuesByField } from './api';
  */
 export default function LeaveForm({ leaveTypes, balance }) {
   const router = useRouter();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayInPakistan();
 
   const [leaveTypeId, setLeaveTypeId] = useState(leaveTypes[0]?.id ?? '');
   const [from, setFrom] = useState('');

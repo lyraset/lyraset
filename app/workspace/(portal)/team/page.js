@@ -22,11 +22,7 @@ export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Team attendance' };
 
 /**
- * The daily sheet: every employee's day on one screen.
- *
- * Each row is computed in that person's own timezone, so a Dubai row and an
- * Islamabad row are directly comparable even though 10:00 means two different
- * instants for them.
+ * The daily sheet: every employee's day on one screen, in Pakistan time.
  */
 export default async function TeamPage({ searchParams }) {
   const user = await requirePagePermission(P.ATTENDANCE_VIEW_ALL);
@@ -34,7 +30,6 @@ export default async function TeamPage({ searchParams }) {
 
   const date = typeof sp.date === 'string' ? sp.date : null;
   const filters = {
-    office: typeof sp.office === 'string' ? sp.office : undefined,
     departmentId: typeof sp.departmentId === 'string' ? sp.departmentId : undefined,
     status: typeof sp.status === 'string' ? sp.status : undefined,
   };
@@ -70,15 +65,6 @@ export default async function TeamPage({ searchParams }) {
           fields={[
             { name: 'date', label: 'Date', type: 'date' },
             {
-              name: 'office',
-              label: 'Office',
-              type: 'select',
-              options: [
-                { value: 'ISLAMABAD', label: 'Islamabad' },
-                { value: 'DUBAI', label: 'Dubai' },
-              ],
-            },
-            {
               name: 'departmentId',
               label: 'Department',
               type: 'select',
@@ -104,7 +90,6 @@ export default async function TeamPage({ searchParams }) {
             <thead>
               <tr>
                 <th scope="col">Employee</th>
-                <th scope="col">Office</th>
                 <th scope="col">Shift</th>
                 <th scope="col">In</th>
                 <th scope="col">Out</th>
@@ -129,7 +114,6 @@ export default async function TeamPage({ searchParams }) {
                       />
                     </Link>
                   </td>
-                  <td className="ws-muted">{row.office}</td>
                   <td className="ws-mono ws-muted">
                     {row.shift ? row.shift.start + '–' + row.shift.end : '—'}
                   </td>

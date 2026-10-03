@@ -18,7 +18,6 @@ export default async function EmployeesPage({ searchParams }) {
 
   await connectDB();
   const find = {};
-  if (typeof sp.office === 'string') find.office = sp.office;
   if (typeof sp.status === 'string') find.status = sp.status;
   if (typeof sp.departmentId === 'string') find.departmentId = sp.departmentId;
   if (typeof sp.q === 'string' && sp.q.trim()) {
@@ -58,15 +57,6 @@ export default async function EmployeesPage({ searchParams }) {
         <Filters
           fields={[
             { name: 'q', label: 'Search', placeholder: 'Name, ID or email' },
-            {
-              name: 'office',
-              label: 'Office',
-              type: 'select',
-              options: [
-                { value: 'ISLAMABAD', label: 'Islamabad' },
-                { value: 'DUBAI', label: 'Dubai' },
-              ],
-            },
             {
               name: 'departmentId',
               label: 'Department',

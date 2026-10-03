@@ -7,6 +7,7 @@ import Shift from '@/models/workspace/Shift';
 import { getWorkspaceContext, scheduleFor, officeFor } from '@/lib/workspace/context';
 import { maskStoredField } from '@/lib/workspace/crypto';
 import { formatDuration } from '@/lib/workspace/calc/attendance';
+import { TIMEZONE_LABEL } from '@/lib/workspace/timezone';
 import { PageHead, Panel, formatDate } from '@/components/workspace/ui';
 
 export const dynamic = 'force-dynamic';
@@ -58,7 +59,7 @@ export default async function ProfilePage() {
             <dd>{profile.department ?? '—'}</dd>
             <dt>Office</dt>
             <dd>
-              {office.name} ({office.timezone})
+              {office.name} · {TIMEZONE_LABEL}
             </dd>
             <dt>Work mode</dt>
             <dd>{titleCase(profile.workMode)}</dd>
@@ -152,15 +153,12 @@ export default async function ProfilePage() {
         )}
       </Panel>
 
-      {(office.enforceGeofence || office.enforceIpAllowlist || office.selfieRequired) && (
+      {(office.enforceGeofence || office.enforceIpAllowlist) && (
         <Panel title="What is recorded when you clock in">
           <ul className="ws-muted mb-0">
             <li>The time, stamped by the server — never by your device.</li>
             <li>Your IP address.</li>
             {office.enforceGeofence && <li>Your location, to confirm you are at the office.</li>}
-            {office.selfieRequired && (
-              <li>A photo, stored privately and opened only by the Owner.</li>
-            )}
           </ul>
           {office.policyNote && <p className="ws-faint mt-2 mb-0">{office.policyNote}</p>}
         </Panel>

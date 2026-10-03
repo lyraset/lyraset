@@ -17,7 +17,7 @@ export default async function HolidaysPage() {
     <div className="ws-page">
       <PageHead
         title="Holidays"
-        lead="Per office, or for everyone. Adding one recalculates that day for anyone whose period is still open."
+        lead="Adding one recalculates that day for anyone whose period is still open."
       />
 
       <div className="alert alert-info ws-alert" role="note">
@@ -32,34 +32,24 @@ export default async function HolidaysPage() {
           collectionKey="Holidays"
           addLabel="Add holiday"
           emptyTitle="No holidays yet"
-          emptyBody="Add the public holidays for each office so those days are never marked absent."
+          emptyBody="Add the public holidays so those days are never marked absent."
           hardDelete
           items={holidays.map((h) => ({
             id: String(h._id),
             date: h.date,
             name: h.name,
-            offices: h.offices ?? [],
             isClosure: h.isClosure,
             note: h.note ?? '',
+            display: {
+              date: formatDate(h.date, { weekday: true }),
+              isClosure: h.isClosure ? 'Office closure' : 'Public holiday',
+            },
           }))}
           columns={[
-            {
-              key: 'date',
-              label: 'Date',
-              render: (item) => formatDate(item.date, { weekday: true }),
-            },
+            { key: 'date', label: 'Date' },
             { key: 'name', label: 'Name' },
-            {
-              key: 'offices',
-              label: 'Offices',
-              render: (item) => (item.offices?.length ? item.offices.join(', ') : 'All'),
-            },
-            {
-              key: 'isClosure',
-              label: 'Type',
-              render: (item) => (item.isClosure ? 'Office closure' : 'Public holiday'),
-            },
-            { key: 'note', label: 'Note', wrap: true, render: (item) => item.note || '—' },
+            { key: 'isClosure', label: 'Type' },
+            { key: 'note', label: 'Note', wrap: true },
           ]}
           fields={[
             { name: 'date', label: 'Date', type: 'date', required: true, col: 'col-12 col-md-3' },
@@ -68,18 +58,7 @@ export default async function HolidaysPage() {
               label: 'Name',
               required: true,
               placeholder: 'Eid al-Fitr',
-              col: 'col-12 col-md-4',
-            },
-            {
-              name: 'offices',
-              label: 'Applies to',
-              type: 'multiselect',
-              options: [
-                { value: 'ISLAMABAD', label: 'Islamabad' },
-                { value: 'DUBAI', label: 'Dubai' },
-              ],
-              hint: 'None selected means every office.',
-              col: 'col-12 col-md-2',
+              col: 'col-12 col-md-6',
             },
             {
               name: 'isClosure',

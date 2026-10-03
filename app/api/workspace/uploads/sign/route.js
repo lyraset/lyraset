@@ -14,7 +14,6 @@ export const runtime = 'nodejs';
 
 /** Which permission each upload kind needs, so a signature cannot be repurposed. */
 const PURPOSES = {
-  SELFIE: { folder: UPLOAD_FOLDERS.SELFIE, permission: P.ATTENDANCE_SELF },
   EOD: { folder: UPLOAD_FOLDERS.EOD, permission: P.EOD_SUBMIT },
   LEAVE: { folder: UPLOAD_FOLDERS.LEAVE, permission: P.LEAVE_REQUEST },
   REQUEST: { folder: UPLOAD_FOLDERS.LEAVE, permission: P.REQUEST_SUBMIT },

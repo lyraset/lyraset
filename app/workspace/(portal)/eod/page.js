@@ -23,7 +23,7 @@ export default async function MyEodPage({ searchParams }) {
   const sp = (await searchParams) ?? {};
 
   const ctx = await getWorkspaceContext();
-  const cycle = cycleFor(ctx, user, new Date());
+  const cycle = cycleFor(ctx, new Date());
   const from = typeof sp.from === 'string' ? sp.from : cycle.startDate;
   const to = typeof sp.to === 'string' ? sp.to : cycle.endDate;
 

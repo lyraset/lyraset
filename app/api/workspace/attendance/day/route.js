@@ -11,9 +11,9 @@ import {
   getWorkspaceContext,
   cycleFor,
   scheduleFor,
-  timezoneFor,
   assertPeriodOpen,
 } from '@/lib/workspace/context';
+import { TIMEZONE } from '@/lib/workspace/timezone';
 import { recomputeDay, serializeRecord } from '@/lib/workspace/services/attendance';
 import { logAudit } from '@/lib/workspace/audit';
 
@@ -49,11 +49,10 @@ export const PATCH = api(async (req) => {
   const ctx = await getWorkspaceContext();
   await assertPeriodOpen({ office: user.office, date: input.workDate, ctx });
 
-  const tz = timezoneFor(ctx, user);
   const before = await Attendance.findOne({ userId: user.id, workDate: input.workDate }).lean();
 
   const toInstant = (time) =>
-    time ? DateTime.fromISO(input.workDate + 'T' + time, { zone: tz }).toJSDate() : null;
+    time ? DateTime.fromISO(input.workDate + 'T' + time, { zone: TIMEZONE }).toJSDate() : null;
 
   const clockIn = toInstant(input.clockIn);
   const clockOut = toInstant(input.clockOut);
@@ -61,12 +60,11 @@ export const PATCH = api(async (req) => {
     throw new HttpError(400, 'The clock-out time must be after the clock-in time.');
   }
 
-  const cycle = cycleFor(ctx, user, input.workDate);
+  const cycle = cycleFor(ctx, input.workDate);
   const schedule = scheduleFor(ctx, user, input.workDate);
 
   const set = {
     office: user.office,
-    timezone: tz,
     cycleKey: cycle.key,
     shiftId: schedule.shiftId || null,
     editedBy: actor.id,

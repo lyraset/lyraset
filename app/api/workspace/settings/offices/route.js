@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import Office from '@/models/workspace/Office';
-import User, { OFFICES, OFFICE_TIMEZONES } from '@/models/workspace/User';
+import { OFFICES } from '@/models/workspace/User';
 import { P } from '@/lib/workspace/permissions';
 import { requireApiPermission, HttpError } from '@/lib/workspace/auth';
 import { api, json, readJson } from '@/lib/workspace/route';
@@ -12,11 +12,11 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 /**
- * Office settings: the timezone every calculation for that office runs in, the
- * weekend, and the integrity checks applied at clock-in.
+ * Office settings: the weekend and the integrity checks applied at clock-in.
  *
- * There are exactly two offices, created by the seed, so this route edits them
- * rather than offering create and delete.
+ * There is one office, in Pakistan, so this route edits it rather than
+ * offering create and delete. It has no timezone setting: the portal always
+ * runs on Pakistan time.
  */
 
 const Cidr = z
@@ -30,7 +30,6 @@ const Cidr = z
 const Schema = z.object({
   code: z.enum(OFFICES),
   name: z.string().trim().min(2).max(80).optional(),
-  timezone: z.string().trim().max(60).optional(),
   // Luxon weekday numbers: 1 is Monday, 7 is Sunday.
   weekendDays: z.array(z.coerce.number().int().min(1).max(7)).max(7).optional(),
   enforceIpAllowlist: z.boolean().optional(),
@@ -43,7 +42,6 @@ const Schema = z.object({
       radiusM: z.coerce.number().int().min(20).max(20000).default(200),
     })
     .optional(),
-  selfieRequired: z.boolean().optional(),
   policyNote: z.string().trim().max(2000).nullish(),
 });
 
@@ -74,21 +72,17 @@ export const PATCH = api(async (req) => {
   }
 
   const { code, ...set } = data;
-  await Office.updateOne(
-    { code },
-    {
-      $set: set,
-      $setOnInsert: { code, name: code, timezone: OFFICE_TIMEZONES[code] ?? 'Asia/Karachi' },
-    },
-    { upsert: true, setDefaultsOnInsert: true, runValidators: true }
-  );
+  // A path may appear in only one operator, so the default name is written on
+  // insert only when the form did not send one. The settings form always does.
+  const update = { $set: set };
+  if (!set.name) update.$setOnInsert = { name: 'Islamabad' };
+  await Office.updateOne({ code }, update, {
+    upsert: true,
+    setDefaultsOnInsert: true,
+    runValidators: true,
+  });
 
   const after = await Office.findOne({ code }).lean();
-
-  // Everyone at the office follows its timezone, so a change has to reach them.
-  if (data.timezone && data.timezone !== before?.timezone) {
-    await User.updateMany({ office: code }, { $set: { timezone: data.timezone } });
-  }
 
   await logAudit({
     actorId: actor.id,

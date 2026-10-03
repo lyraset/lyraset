@@ -27,7 +27,6 @@ const emptyForm = () => ({
   name: '',
   from: '',
   to: '',
-  offices: [],
   note: '',
   active: true,
   days: Object.fromEntries(
@@ -55,7 +54,6 @@ export default function ScheduleOverrides({ schedules }) {
       name: schedule.name,
       from: schedule.from,
       to: schedule.to,
-      offices: schedule.offices ?? [],
       note: schedule.note ?? '',
       active: schedule.active,
       days: Object.fromEntries(
@@ -99,7 +97,6 @@ export default function ScheduleOverrides({ schedules }) {
         name: form.name,
         from: form.from,
         to: form.to,
-        offices: form.offices,
         days,
         note: form.note || null,
         active: form.active,
@@ -159,10 +156,7 @@ export default function ScheduleOverrides({ schedules }) {
                     {schedule.name}
                     {!schedule.active && <span className="ws-flag ms-2">Retired</span>}
                   </p>
-                  <p className="ws-person-meta mb-0">
-                    {schedule.summary} ·{' '}
-                    {schedule.offices?.length ? schedule.offices.join(', ') : 'All offices'}
-                  </p>
+                  <p className="ws-person-meta mb-0">{schedule.summary}</p>
                 </div>
                 <div className="d-flex gap-2">
                   <button
@@ -214,7 +208,7 @@ export default function ScheduleOverrides({ schedules }) {
         <h3 className="ws-panel-title">{editingId ? 'Edit override' : 'Add an override'}</h3>
 
         <div className="row g-3 mb-3">
-          <div className="col-12 col-md-4">
+          <div className="col-12 col-md-8">
             <label className="form-label ws-label ws-required" htmlFor="sched-name">
               Name
             </label>
@@ -253,34 +247,6 @@ export default function ScheduleOverrides({ schedules }) {
               onChange={(e) => setForm((f) => ({ ...f, to: e.target.value }))}
             />
             {fieldErrors.to && <p className="ws-field-error">{fieldErrors.to}</p>}
-          </div>
-          <div className="col-12 col-md-4">
-            <span className="form-label ws-label d-block">Applies to</span>
-            {[
-              { value: 'ISLAMABAD', label: 'Islamabad' },
-              { value: 'DUBAI', label: 'Dubai' },
-            ].map((office) => (
-              <div className="form-check form-check-inline" key={office.value}>
-                <input
-                  id={'sched-office-' + office.value}
-                  type="checkbox"
-                  className="form-check-input"
-                  checked={form.offices.includes(office.value)}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      offices: e.target.checked
-                        ? [...f.offices, office.value]
-                        : f.offices.filter((o) => o !== office.value),
-                    }))
-                  }
-                />
-                <label className="form-check-label" htmlFor={'sched-office-' + office.value}>
-                  {office.label}
-                </label>
-              </div>
-            ))}
-            <p className="form-text">None selected means every office.</p>
           </div>
         </div>
 

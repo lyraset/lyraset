@@ -16,12 +16,11 @@ const DESCRIPTIONS = {
     'Date-range overrides such as Ramadan timings or a one-off early close.',
   '/workspace/settings/leave-types':
     'What kinds of leave people can apply for, and the rules for each.',
-  '/workspace/settings/holidays': 'The public holiday calendar, per office, and one-off closures.',
+  '/workspace/settings/holidays': 'The public holiday calendar and one-off closures.',
   '/workspace/settings/projects': 'The clients and projects EOD tasks are filed against.',
   '/workspace/settings/departments':
     'The department list used across profiles, filters and reports.',
-  '/workspace/settings/offices':
-    'Timezone, weekend, IP allowlist, geofence and selfie rules per office.',
+  '/workspace/settings/offices': 'Weekend, IP allowlist and geofence rules for the office.',
   '/workspace/settings/notifications':
     'Which reminders and summaries are sent, and whether email is on.',
 };

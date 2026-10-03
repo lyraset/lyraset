@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiPost, apiPatch, uploadPrivateFile, issuesByField } from './api';
 import { StatusBadge, TableWrap, Empty, formatDate } from './ui';
+import { todayInPakistan } from '@/lib/workspace/timezone';
 
 /**
  * Corrections, work from home, official duty and overtime claims.
@@ -30,7 +31,7 @@ const TYPES = [
 
 export default function RequestForm({ requests }) {
   const router = useRouter();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayInPakistan();
 
   const [type, setType] = useState('CORRECTION');
   const [dates, setDates] = useState([today]);

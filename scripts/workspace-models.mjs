@@ -71,5 +71,5 @@ export const Notification = model(NotificationMod);
 export const AuditLog = model(AuditLogMod);
 
 // Named exports come through unchanged under both readings.
-export const { OFFICE_TIMEZONES, OFFICES, WORK_MODES, EMPLOYMENT_TYPES } = UserMod;
+export const { OFFICES, WORK_MODES, EMPLOYMENT_TYPES } = UserMod;
 export const { SINGLETON_KEY } = SettingsMod;

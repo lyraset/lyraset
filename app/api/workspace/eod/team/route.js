@@ -9,6 +9,7 @@ import User from '@/models/workspace/User';
 import Attendance from '@/models/workspace/Attendance';
 import { serializeEod, missingEodsFor } from '@/lib/workspace/services/eod';
 import { getWorkspaceContext } from '@/lib/workspace/context';
+import { todayInPakistan } from '@/lib/workspace/timezone';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -32,7 +33,7 @@ export const GET = api(async (req) => {
   const filters = parseQuery(Schema, query(req));
 
   const ctx = await getWorkspaceContext();
-  const date = filters.date ?? new Date().toISOString().slice(0, 10);
+  const date = filters.date ?? todayInPakistan();
   const from = filters.from ?? date;
   const to = filters.to ?? date;
 

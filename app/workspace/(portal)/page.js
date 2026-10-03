@@ -58,7 +58,6 @@ export default async function WorkspaceDashboard({ searchParams }) {
         <ConsentNotice
           office={{
             geofenceEnforced: Boolean(officeFor(ctx, user.office).enforceGeofence),
-            selfieRequired: Boolean(officeFor(ctx, user.office).selfieRequired),
           }}
         />
       )}
@@ -158,7 +157,7 @@ async function loadProjects() {
 
 /** This cycle's headline numbers for the person looking at the page. */
 async function loadCycleStats(ctx, user) {
-  const cycle = cycleFor(ctx, user, new Date());
+  const cycle = cycleFor(ctx, new Date());
   const days = await buildDayRange({
     user,
     fromDate: cycle.startDate,

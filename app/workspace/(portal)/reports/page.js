@@ -8,6 +8,7 @@ import User from '@/models/workspace/User';
 import { buildReport, REPORT_LABELS, REPORTS } from '@/lib/workspace/services/reports';
 import { getWorkspaceContext, cycleFor } from '@/lib/workspace/context';
 import { listCycles } from '@/lib/workspace/calc/cycle';
+import { TIMEZONE } from '@/lib/workspace/timezone';
 import { PageHead, Panel, Empty, TableWrap } from '@/components/workspace/ui';
 import Filters from '@/components/workspace/Filters';
 
@@ -28,7 +29,6 @@ export default async function ReportsPage({ searchParams }) {
     from: typeof sp.from === 'string' ? sp.from : undefined,
     to: typeof sp.to === 'string' ? sp.to : undefined,
     cycleKey: typeof sp.cycleKey === 'string' ? sp.cycleKey : undefined,
-    office: typeof sp.office === 'string' ? sp.office : undefined,
     departmentId: typeof sp.departmentId === 'string' ? sp.departmentId : undefined,
     userId: typeof sp.userId === 'string' ? sp.userId : undefined,
     projectId: typeof sp.projectId === 'string' ? sp.projectId : undefined,
@@ -48,7 +48,7 @@ export default async function ReportsPage({ searchParams }) {
     new Date(now.getFullYear() - 1, now.getMonth(), 1),
     now,
     ctx.cycleHistory,
-    'Asia/Karachi'
+    TIMEZONE
   ).reverse();
 
   let report = null;
@@ -109,15 +109,6 @@ export default async function ReportsPage({ searchParams }) {
             },
             { name: 'from', label: 'From', type: 'date' },
             { name: 'to', label: 'To', type: 'date' },
-            {
-              name: 'office',
-              label: 'Office',
-              type: 'select',
-              options: [
-                { value: 'ISLAMABAD', label: 'Islamabad' },
-                { value: 'DUBAI', label: 'Dubai' },
-              ],
-            },
             {
               name: 'departmentId',
               label: 'Department',

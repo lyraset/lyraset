@@ -7,6 +7,6 @@ export const SETTINGS_NAV = [
   { href: '/workspace/settings/holidays', label: 'Holidays' },
   { href: '/workspace/settings/projects', label: 'Clients & projects' },
   { href: '/workspace/settings/departments', label: 'Departments' },
-  { href: '/workspace/settings/offices', label: 'Offices' },
+  { href: '/workspace/settings/offices', label: 'Office' },
   { href: '/workspace/settings/notifications', label: 'Notifications' },
 ];

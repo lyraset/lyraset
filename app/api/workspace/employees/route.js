@@ -1,12 +1,6 @@
 import { z } from 'zod';
 import { connectDB } from '@/lib/workspace/db';
-import User, {
-  toSafeUser,
-  OFFICES,
-  OFFICE_TIMEZONES,
-  WORK_MODES,
-  EMPLOYMENT_TYPES,
-} from '@/models/workspace/User';
+import User, { toSafeUser, OFFICES, WORK_MODES, EMPLOYMENT_TYPES } from '@/models/workspace/User';
 import ShiftAssignment from '@/models/workspace/ShiftAssignment';
 import Department from '@/models/workspace/Department';
 import { P, ROLES, ASSIGNABLE_ROLES, canAssignRole } from '@/lib/workspace/permissions';
@@ -134,7 +128,6 @@ export const POST = api(async (req) => {
       departmentId: data.departmentId ?? null,
       managerId: data.managerId ?? null,
       office: data.office,
-      timezone: OFFICE_TIMEZONES[data.office],
       workMode: data.workMode,
       employmentType: data.employmentType,
       joiningDate: data.joiningDate ? new Date(data.joiningDate) : undefined,

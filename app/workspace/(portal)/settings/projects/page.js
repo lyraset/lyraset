@@ -31,15 +31,15 @@ export default async function ProjectsPage() {
             name: p.name,
             client: p.client ?? '',
             active: p.active,
+            display: {
+              client: p.client || 'Internal',
+              active: p.active ? 'Active' : 'Retired',
+            },
           }))}
           columns={[
-            { key: 'client', label: 'Client', render: (item) => item.client || 'Internal' },
+            { key: 'client', label: 'Client' },
             { key: 'name', label: 'Project' },
-            {
-              key: 'active',
-              label: 'Status',
-              render: (item) => (item.active ? 'Active' : 'Retired'),
-            },
+            { key: 'active', label: 'Status' },
           ]}
           fields={[
             { name: 'client', label: 'Client', nullable: true, col: 'col-12 col-md-4' },
